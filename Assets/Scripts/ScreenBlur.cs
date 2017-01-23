@@ -3,7 +3,7 @@
 [ExecuteInEditMode]
 public class ScreenBlur : MonoBehaviour
 {
-    public Shader shader;
+    public Shader BlurShader;
 
     public Shader DownSample;
 
@@ -15,6 +15,7 @@ public class ScreenBlur : MonoBehaviour
             {
                 _downSampleMaterial = new Material(DownSample);
             }
+            _downSampleMaterial.hideFlags = HideFlags.HideAndDontSave;
             return _downSampleMaterial;
         }
     }
@@ -28,8 +29,9 @@ public class ScreenBlur : MonoBehaviour
         {
             if (_blurMaterial == null)
             {
-                _blurMaterial = new Material(shader);
+                _blurMaterial = new Material(BlurShader);
             }
+            _downSampleMaterial.hideFlags = HideFlags.HideAndDontSave;
             return _blurMaterial;
         }
     }
@@ -50,7 +52,7 @@ public class ScreenBlur : MonoBehaviour
 
         Graphics.Blit(temp, destination, blurMaterial,1);
 
-        temp.Release();
-        downSampleText.Release();
+        RenderTexture.ReleaseTemporary(temp);
+        RenderTexture.ReleaseTemporary(downSampleText);
     }
 }
