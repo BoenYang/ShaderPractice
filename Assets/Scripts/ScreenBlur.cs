@@ -45,7 +45,6 @@ public class ScreenBlur : MonoBehaviour
         downSampleText.name = "downSample";
         Graphics.Blit(source, downSampleText,downSampleMaterial);
 
-
         RenderTexture temp = RenderTexture.GetTemporary(source.width/2,source.height/ 2,0, RenderTextureFormat.Default);
         temp.name = "t1";
         Graphics.Blit(downSampleText, temp, blurMaterial, 0);
