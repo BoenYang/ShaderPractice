@@ -14,6 +14,7 @@
 
 		//水平方向模糊
 		Pass {
+			Name "BLURHORIZONTAL"
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
@@ -42,30 +43,31 @@
 			{
 				v2f o;
 				o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
-				o.uv[0] = v.uv;
-				o.uv[1] = v.uv;
-				o.uv[2] = v.uv;
 
-				o.uv[1].x -= 2 * _MainTex_TexelSize.x;
-				o.uv[2].x += 2 * _MainTex_TexelSize.x;
+				o.uv[0] = v.uv;
+				o.uv[1] = v.uv + float2(_MainTex_TexelSize.x * 1.0, 0.0);
+				o.uv[2] = v.uv + float2(_MainTex_TexelSize.x * 2.0, 0.0);
+				o.uv[3] = v.uv - float2(_MainTex_TexelSize.x * 1.0, 0.0);
+				o.uv[4] = v.uv - float2(_MainTex_TexelSize.x * 2.0, 0.0);
 
 				return o;
 			}
-			
-
 
 			fixed4 frag (v2f i) : SV_Target
 			{
-				fixed4 col = tex2D(_MainTex, i.uv[0])  * 0.147761;
-				fixed4 col1 = tex2D(_MainTex, i.uv[1]) * 0.118318;
-				fixed4 col2 = tex2D(_MainTex, i.uv[2]) * 0.118318;
+				fixed4 col0 = tex2D(_MainTex, i.uv[0]) * 0.4026;
+				fixed4 col1 = tex2D(_MainTex, i.uv[1]) * 0.2442;
+				fixed4 col2 = tex2D(_MainTex, i.uv[2]) * 0.0545;
+				fixed4 col3 = tex2D(_MainTex, i.uv[3]) * 0.2442;
+				fixed4 col4 = tex2D(_MainTex, i.uv[4]) * 0.0545;
 
-				return (col + col1 + col2) * 2.5; 
+				return (col0 + col1 + col2 + col3 + col4); 
 			}
 			ENDCG
 		}
 
 		Pass{
+			Name "BLURVERTICAL"
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
@@ -94,23 +96,23 @@
 
 				o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
 				o.uv[0] = v.uv;
-				o.uv[1] = v.uv;
-				o.uv[2] = v.uv;
-
-				o.uv[1].y -= 2 * _MainTex_TexelSize.y;
-				o.uv[2].y += 2 * _MainTex_TexelSize.y;
-
+				o.uv[1] = v.uv + float2(0, _MainTex_TexelSize.y * 1);
+				o.uv[2] = v.uv + float2(0, _MainTex_TexelSize.y * 2);
+				o.uv[3] = v.uv - float2(0, _MainTex_TexelSize.y * 1);
+				o.uv[4] = v.uv - float2(0, _MainTex_TexelSize.y * 2);
 				return o;
 			}
 
 		
 
 			fixed4 frag(v2f i) : SV_Target
-			{
-				fixed4 col = tex2D(_MainTex, i.uv[0])  * 0.147761;
-				fixed4 col1 = tex2D(_MainTex, i.uv[1]) * 0.118318;
-				fixed4 col2 = tex2D(_MainTex, i.uv[2]) * 0.118318;
-				return (col + col1 + col2)* 2.5;
+			{ 
+				fixed4 col0 = tex2D(_MainTex, i.uv[0]) * 0.4026;
+				fixed4 col1 = tex2D(_MainTex, i.uv[1]) * 0.2442;
+				fixed4 col2 = tex2D(_MainTex, i.uv[2]) * 0.0545;
+				fixed4 col3 = tex2D(_MainTex, i.uv[3]) * 0.2442;
+				fixed4 col4 = tex2D(_MainTex, i.uv[4]) * 0.0545;
+				return (col0 + col1 + col2 + col3 + col4);
 			}
 			
 			ENDCG
