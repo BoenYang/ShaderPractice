@@ -7,6 +7,8 @@ public class Bloom : MonoBehaviour
 
     public Shader BloomShader;
 
+    public int BlurIteration = 1;
+
     private Material bloomMaterial
     {
         get
@@ -25,23 +27,38 @@ public class Bloom : MonoBehaviour
     public void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
         bloomMaterial.SetFloat("_LuminanceThreshold", LuminanceThreshold);
+        bloomMaterial.SetFloat("_BlurStrength",1.0f);
 
-        RenderTexture rt = RenderTexture.GetTemporary(source.width,source.height,0,RenderTextureFormat.Default);
-        rt.name = "BloomRT";
-        Graphics.Blit(source, rt, bloomMaterial, 0);
+        int w = source.width/2;
+        int h = source.height/2;
 
-        RenderTexture bloomRt1 = RenderTexture.GetTemporary(source.width,source.height,0,RenderTextureFormat.Default);
-        RenderTexture bloomRt = RenderTexture.GetTemporary(source.width, source.height, 0, RenderTextureFormat.Default);
+        RenderTexture bloomRt = RenderTexture.GetTemporary(w,h,0,RenderTextureFormat.Default);
+        RenderTexture t1 = bloomRt;
+        RenderTexture t2 = null;
+        Graphics.Blit(source, bloomRt, bloomMaterial, 0);
 
-        Graphics.Blit(rt,bloomRt1,bloomMaterial,1);
-        Graphics.Blit(bloomRt1,bloomRt,bloomMaterial,2);
+        //迭代模糊
+        for (int i = 0; i < BlurIteration; i++)
+        {
+            t2 = RenderTexture.GetTemporary(w, h, 0);
+            Graphics.Blit(t1,t2,bloomMaterial,1);
+            RenderTexture.ReleaseTemporary(t1);
 
+            t1 = t2;
+
+            t2 = RenderTexture.GetTemporary(w,h,0);
+            Graphics.Blit(t1,t2,bloomMaterial,2);
+
+            RenderTexture.ReleaseTemporary(t1);
+
+            t1 = t2;
+        }
+
+
+        bloomRt = t2;
         bloomMaterial.SetTexture("_BloomTex",bloomRt);
 
         Graphics.Blit(source,destination,bloomMaterial,3);
-
-        RenderTexture.ReleaseTemporary(rt);
-        RenderTexture.ReleaseTemporary(bloomRt1);
         RenderTexture.ReleaseTemporary(bloomRt);
     }
 }

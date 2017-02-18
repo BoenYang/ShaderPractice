@@ -3,25 +3,13 @@
 [ExecuteInEditMode]
 public class ScreenBlur : MonoBehaviour
 {
+    public float BlurStrength = 1.0f;
+
+    [Range(1,5)]
+    public int Iteration = 1;
+
+    [HideInInspector]
     public Shader BlurShader;
-
-    public Shader DownSample;
-
-    private Material downSampleMaterial
-    {
-        get
-        {
-            if (_downSampleMaterial == null)
-            {
-                _downSampleMaterial = new Material(DownSample);
-            }
-            _downSampleMaterial.hideFlags = HideFlags.HideAndDontSave;
-            return _downSampleMaterial;
-        }
-    }
-
-    private Material _downSampleMaterial;
-
 
     private Material blurMaterial
     {
@@ -31,7 +19,7 @@ public class ScreenBlur : MonoBehaviour
             {
                 _blurMaterial = new Material(BlurShader);
             }
-            _downSampleMaterial.hideFlags = HideFlags.HideAndDontSave;
+            _blurMaterial.hideFlags = HideFlags.HideAndDontSave;
             return _blurMaterial;
         }
     }
@@ -40,18 +28,30 @@ public class ScreenBlur : MonoBehaviour
 
     public void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
+
+        blurMaterial.SetFloat("_BlurStrength",BlurStrength);
       
-        RenderTexture downSampleText = RenderTexture.GetTemporary(source.width/2,source.height/2,0,RenderTextureFormat.Default);
-        downSampleText.name = "downSample";
-        Graphics.Blit(source, downSampleText,downSampleMaterial);
+        RenderTexture t0 = RenderTexture.GetTemporary(source.width/2,source.height/2,0,RenderTextureFormat.Default);
+        Graphics.Blit(source, t0);
 
-        RenderTexture temp = RenderTexture.GetTemporary(source.width/2,source.height/ 2,0, RenderTextureFormat.Default);
-        temp.name = "t1";
-        Graphics.Blit(downSampleText, temp, blurMaterial, 0);
 
-        Graphics.Blit(temp, destination, blurMaterial,1);
+        for (int i = 0; i < Iteration; i++)
+        {
+            RenderTexture t1 = RenderTexture.GetTemporary(t0.width, t0.height, 0, RenderTextureFormat.Default);
+            Graphics.Blit(t0,t1,blurMaterial,0);
 
-        RenderTexture.ReleaseTemporary(temp);
-        RenderTexture.ReleaseTemporary(downSampleText);
+            RenderTexture.ReleaseTemporary(t0);
+
+            t0 = t1;
+            t1 = RenderTexture.GetTemporary(t0.width, t0.height, 0, RenderTextureFormat.Default);
+
+            Graphics.Blit(t0, t1, blurMaterial, 1);
+
+            RenderTexture.ReleaseTemporary(t0);
+            t0 = t1;
+        }
+
+        Graphics.Blit(t0,destination);
+        RenderTexture.ReleaseTemporary(t0);
     }
 }

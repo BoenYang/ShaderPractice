@@ -4,7 +4,6 @@
 public class RadialBlur : MonoBehaviour
 {
 
-    public Shader Blur;
 
     [Range(0,1)]
     public float SampleDistance = 0.5f;
@@ -12,6 +11,9 @@ public class RadialBlur : MonoBehaviour
 
     [Range(0,1)]
     public float SampleStrength = 0.5f;
+
+    [HideInInspector]
+    public Shader Blur;
 
     private Material blurMaterial
     {

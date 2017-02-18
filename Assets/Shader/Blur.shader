@@ -3,9 +3,7 @@
 	Properties
 	{
 		_MainTex ("Texture", 2D) = "white" {}
-		_offset1("offset1",float) = 1
-		_offset2("offset2",float) = 1
-
+		_BlurStrength("_BlurStrength",float) = 1.0
 	}
 	SubShader
 	{
@@ -22,10 +20,8 @@
 			#include "UnityCG.cginc"
 
 			sampler2D _MainTex;
-			uniform half _offset1;
-			uniform half _offset2;
 			half4 _MainTex_TexelSize;
-
+			float _BlurStrength;
 
 			struct appdata
 			{
@@ -45,10 +41,10 @@
 				o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
 
 				o.uv[0] = v.uv;
-				o.uv[1] = v.uv + float2(_MainTex_TexelSize.x * 1.0, 0.0);
-				o.uv[2] = v.uv + float2(_MainTex_TexelSize.x * 2.0, 0.0);
-				o.uv[3] = v.uv - float2(_MainTex_TexelSize.x * 1.0, 0.0);
-				o.uv[4] = v.uv - float2(_MainTex_TexelSize.x * 2.0, 0.0);
+				o.uv[1] = v.uv + float2(_MainTex_TexelSize.x * 1.0, 0.0) * _BlurStrength;
+				o.uv[2] = v.uv + float2(_MainTex_TexelSize.x * 2.0, 0.0) * _BlurStrength;
+				o.uv[3] = v.uv - float2(_MainTex_TexelSize.x * 1.0, 0.0) * _BlurStrength;
+				o.uv[4] = v.uv - float2(_MainTex_TexelSize.x * 2.0, 0.0) * _BlurStrength;
 
 				return o;
 			}
@@ -76,6 +72,7 @@
 
 			half4 _MainTex_TexelSize;
 			sampler2D _MainTex;
+			float _BlurStrength;
 
 			struct appdata
 			{
@@ -96,10 +93,10 @@
 
 				o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
 				o.uv[0] = v.uv;
-				o.uv[1] = v.uv + float2(0, _MainTex_TexelSize.y * 1);
-				o.uv[2] = v.uv + float2(0, _MainTex_TexelSize.y * 2);
-				o.uv[3] = v.uv - float2(0, _MainTex_TexelSize.y * 1);
-				o.uv[4] = v.uv - float2(0, _MainTex_TexelSize.y * 2);
+				o.uv[1] = v.uv + float2(0, _MainTex_TexelSize.y * 1) * _BlurStrength;
+				o.uv[2] = v.uv + float2(0, _MainTex_TexelSize.y * 2) * _BlurStrength;
+				o.uv[3] = v.uv - float2(0, _MainTex_TexelSize.y * 1) * _BlurStrength;
+				o.uv[4] = v.uv - float2(0, _MainTex_TexelSize.y * 2) * _BlurStrength;
 				return o;
 			}
 
