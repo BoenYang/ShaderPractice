@@ -1,4 +1,4 @@
-﻿Shader "Custom/Displacement" {
+﻿Shader "Tesselation/Tesselation" {
 	Properties {
 		_Color ("Color", Color) = (1,1,1,1)
 		_MainTex ("Albedo (RGB)", 2D) = "white" {}
@@ -7,7 +7,7 @@
 		_Glossiness ("Smoothness", Range(0,1)) = 0.5
 		_Metallic ("Metallic", Range(0,1)) = 0.0
 		_Displacement("Displacement",float) = 0
-		_Tess("Tessellation",Range(1,32)) = 4
+		_Tess("Tessellation",Vector) = (1,1,1,1)
 	}
 	SubShader {
 		Tags { "RenderType"="Opaque" }
@@ -33,7 +33,7 @@
 		half _Metallic;
 		fixed4 _Color;
 		float _Displacement;
-		float _Tess;
+		float4 _Tess;
 
 		struct appdata{
 			float4 vertex: POSITION;
