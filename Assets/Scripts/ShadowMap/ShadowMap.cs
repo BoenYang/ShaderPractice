@@ -8,6 +8,8 @@ public class ShadowMap : MonoBehaviour
 
     public RenderTexture ShadowMapRt;
 
+    public Shader DepthShader;
+
     private Camera lightCamera;
 
 	// Use this for initialization
@@ -21,17 +23,37 @@ public class ShadowMap : MonoBehaviour
         cameraGo.transform.SetParent(transform);
         cameraGo.transform.localPosition = Vector3.zero;
         cameraGo.transform.localRotation = Quaternion.identity;
-
+        
         lightCamera = cameraGo.AddComponent<Camera>();
+        lightCamera.orthographic = true;
+        lightCamera.clearFlags = CameraClearFlags.Color;
+        lightCamera.backgroundColor = Color.black;
         lightCamera.targetTexture = ShadowMapRt;
+        lightCamera.enabled = false;
 
+
+        Shader.SetGlobalTexture("_ShadowDepthMap",ShadowMapRt);
         SetFitToScene();
+
+        CaptureDepth depthCapture = cameraGo.AddComponent<CaptureDepth>();
+        depthCapture.SetDepthShader(DepthShader);
+
+        Matrix4x4 posToUV = new Matrix4x4();
+        posToUV.SetRow(0, new Vector4(0.5f, 0, 0, 0.5f));
+        posToUV.SetRow(1, new Vector4(0, 0.5f, 0, 0.5f));
+        posToUV.SetRow(2, new Vector4(0, 0, 1, 0));
+        posToUV.SetRow(3, new Vector4(0, 0, 0, 1));
+
+
+        Matrix4x4 worldToView = lightCamera.worldToCameraMatrix;
+        Matrix4x4 projection = GL.GetGPUProjectionMatrix(lightCamera.projectionMatrix, false);
+
+        Matrix4x4 m = posToUV * projection * worldToView;
+        Shader.SetGlobalMatrix("_LightProjection", m);
     }
 
     private void SetFitToScene()
     {
-        lightCamera.orthographic = true;
-
         List<Vector3> sceneAABBVertex = new List<Vector3>();
 
         Matrix4x4 sceneLocalToWorldMat = SceneAABB.transform.localToWorldMatrix;
@@ -52,6 +74,8 @@ public class ShadowMap : MonoBehaviour
         lightCamera.orthographicSize = Mathf.Max(box.SizeX/2, box.SizeY/2);
         lightCamera.nearClipPlane = box.MinZ - lightCamera.transform.localPosition.z;
         lightCamera.farClipPlane = box.MaxZ - lightCamera.transform.localPosition.z;
+
+
     }
 }
 
