@@ -52,7 +52,7 @@
 			fixed4 frag (v2f i) : SV_Target
 			{
 				fixed3 N = normalize(i.normal);
-				fixed3 L = normalize(-_WorldSpaceLightPos0.xyz);
+				fixed3 L = normalize(_WorldSpaceLightPos0.xyz);
 				
 				fixed4 texCol =  tex2D(_MainTex,i.uv);
 				fixed3 diffuse =  _LightColor0.rgb * saturate(dot(N,L)) * texCol.rgb;

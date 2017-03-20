@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 9451e4a67c63f7c479b190d69e2fcc3c
+timeCreated: 1490002560
+licenseType: Pro
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - ExtrusionShader: {fileID: 4800000, guid: 51313954c6e70474c88050976545fe3c, type: 3}
+  - SetAlphaShader: {fileID: 4800000, guid: a8462c38e34c1194282b5c6f6815c171, type: 3}
+  - LightObject: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

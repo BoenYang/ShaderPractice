@@ -1,4 +1,4 @@
-﻿Shader "ShadowMap/Test"
+﻿Shader "Lighting/ShadowMap"
 {
 	Properties
 	{
@@ -88,6 +88,7 @@
 				atten = atten / 25;
 				return atten;
 			}
+
 
 
 			float GetShadowAtten(float3 worldPos,float3 worldNormal){

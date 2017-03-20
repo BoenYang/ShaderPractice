@@ -59,7 +59,7 @@ Shader "Lighting/Specular"
 			fixed4 frag (v2f i) : SV_Target
 			{
 				float3 N = normalize(i.normal);
-				float3 L = normalize(-_WorldSpaceLightPos0.xyz);
+				float3 L = normalize(_WorldSpaceLightPos0.xyz);
 				float3 V = normalize(UnityWorldSpaceViewDir(i.worldPos));
 				float3 H = normalize(L + V);
 
