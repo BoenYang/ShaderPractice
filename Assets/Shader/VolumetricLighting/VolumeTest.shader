@@ -11,6 +11,8 @@
 
 		Pass
 		{
+
+			Blend One One
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
@@ -77,7 +79,7 @@
 				float3 rayEnd = i.wpos;
 				float3 rayDir = rayEnd - rayStart;
 
-				return raymatch(rayStart,rayDir,3);
+				return raymatch(rayStart,rayDir,20);
 			}
 			ENDCG
 		}
