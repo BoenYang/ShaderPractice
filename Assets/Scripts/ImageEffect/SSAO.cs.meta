@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: c2a0ab2d772d74e4698541ea62a86b40
+timeCreated: 1497600999
+licenseType: Pro
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - SSAOShader: {fileID: 4800000, guid: da58022dd8136c6478934e31663c2ed9, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
