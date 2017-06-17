@@ -210,6 +210,9 @@
 
 	half4 frag_ssao(v_data_simple i) : SV_Target
 	{
+		//half ao = ssao(i.uv);
+		//return half4(ao.xxx,1.0f);
+
 		#if UNITY_UV_STARTS_AT_TOP
 		return saturate(getAOColor(ssao(i.uv), i.uv2) + _OcclusionColor);
 		#else
