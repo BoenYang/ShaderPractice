@@ -41,7 +41,6 @@ Shader "Hidden/Blur"
 			{
 				v2f o;
 				o.vertex = UnityObjectToClipPos(v.vertex);
-
 				o.uv[0] = v.uv;
 				o.uv[1] = v.uv + float2(_MainTex_TexelSize.x * 1.0, 0.0) * _BlurStrength;
 				o.uv[2] = v.uv + float2(_MainTex_TexelSize.x * 2.0, 0.0) * _BlurStrength;
@@ -91,8 +90,6 @@ Shader "Hidden/Blur"
 			v2f vert(appdata v)
 			{
 				v2f o;
-				o.vertex = UnityObjectToClipPos(v.vertex);
-
 				o.vertex = UnityObjectToClipPos(v.vertex);
 				o.uv[0] = v.uv;
 				o.uv[1] = v.uv + float2(0, _MainTex_TexelSize.y * 1) * _BlurStrength;

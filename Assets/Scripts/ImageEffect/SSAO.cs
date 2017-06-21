@@ -2,7 +2,7 @@
 using System.Collections;
 
 [ExecuteInEditMode]
-public class SSAO : MonoBehaviour
+public class SSAO : ImageEffectBase
 {
 
     public Shader SSAOShader;
@@ -15,6 +15,8 @@ public class SSAO : MonoBehaviour
 
     public float DistanceCutoff = 150;
 
+    [Range(1, 5)]
+    public int BlurIteration = 1;
 
     private Material ssaoMaterial
     {
@@ -55,6 +57,7 @@ public class SSAO : MonoBehaviour
 
         Graphics.Blit(rt,rt,ssaoMaterial,0);
         Graphics.Blit(source, rt, ssaoMaterial,1);
+        BeginBlur(rt,BlurIteration,1);
         Graphics.Blit(rt, destination);
 
         RenderTexture.ReleaseTemporary(rt);

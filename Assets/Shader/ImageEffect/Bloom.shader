@@ -57,11 +57,7 @@ Shader "Hidden/Bloom"
 			ENDCG
 		}
 
-		UsePass "Hidden/Blur/BLURHORIZONTAL"
-
-		UsePass "Hidden/Blur/BLURVERTICAL"
-	
-		Pass{
+		Pass {
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag

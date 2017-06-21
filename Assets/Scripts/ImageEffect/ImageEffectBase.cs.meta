@@ -1,12 +1,11 @@
 fileFormatVersion: 2
-guid: dff88aecea293234dbf83379d732f6d1
-timeCreated: 1498025871
+guid: 441f15a32972f6c41970fde9a3c53dc8
+timeCreated: 1498025348
 licenseType: Pro
 MonoImporter:
   serializedVersion: 2
   defaultReferences:
   - BlurShader: {fileID: 4800000, guid: d67477bc3f0a9404287b9b847ca421f7, type: 3}
-  - BloomShader: {fileID: 4800000, guid: 0525065c198c7f143a426b60d15d38b3, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
