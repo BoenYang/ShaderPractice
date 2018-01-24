@@ -1,15 +1,14 @@
-﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
-
-Shader "Hidden/SSR"
+﻿Shader "Unlit/Wave"
 {
 	Properties
 	{
 		_MainTex ("Texture", 2D) = "white" {}
 	}
+
 	SubShader
 	{
-		// No culling or depth
-		Cull Off ZWrite Off ZTest Always
+		Tags { "RenderType"="Opaque" }
+		LOD 100
 
 		Pass
 		{
@@ -31,21 +30,31 @@ Shader "Hidden/SSR"
 				float4 vertex : SV_POSITION;
 			};
 
+			sampler2D _MainTex;
+			float4 _MainTex_ST;
+			uniform float2 _Dirs[100];
+			uniform float _Amps[100];
+			uniform float _Phases[100];
+			uniform float _Frequency[100];
+			uniform float _Num;
+
+
+			
 			v2f vert (appdata v)
 			{
 				v2f o;
 				o.vertex = UnityObjectToClipPos(v.vertex);
-				o.uv = v.uv;
+
+				for(int i = 0; i < 5; i++){
+					
+				}
+
 				return o;
 			}
 			
-			sampler2D _MainTex;
-
 			fixed4 frag (v2f i) : SV_Target
 			{
 				fixed4 col = tex2D(_MainTex, i.uv);
-				// just invert the colors
-				col = 1 - col;
 				return col;
 			}
 			ENDCG
