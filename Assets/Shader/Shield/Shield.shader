@@ -2,10 +2,10 @@
 {
 	Properties
 	{
-		_MainColor("MainColor",Color) = (1,1,1,1)
-		_MainTex("MainTex",2D) = "white" {}
-		_Fresnel("_Fresnel Intensity",Range(0,200)) = 3.0
-		_FresnelWitdh("FresnelWidth",Range(0,2)) = 3.0
+		_MainColor("MainColor", Color) = (1,1,1,1)
+		_MainTex ("Texture", 2D) = "white" {}
+		_Fresnel("Fresnel Intensity", Range(0,200)) = 3.0
+		_FresnelWidth("Fresnel Width", Range(0,2))  = 3.0
 
 		_IntersectThreshold("IntersectThreshold",Range(0,1)) = 0.1
 	}
@@ -43,7 +43,7 @@
 				fixed4 screenPos : TEXCOORD2;
 			};
 
-			sampler2D _MainTex,_CameraDepthTexture,_GrabTexture;
+			sampler2D _MainTex, _CameraDepthTexture, _GrabTexture;
 			fixed4 _MainTex_ST,_MainColor,_GrabTexture_ST,_GrabTexture_TexelSize;
 			fixed _Fresnel,_FresnelWidth,_IntersectThreshold;
 	
@@ -59,8 +59,9 @@
 
 				//fresnel 
 				fixed3 viewDir = normalize(ObjSpaceViewDir(v.vertex));
+				//dotProduct 为 0 - 1 为1则为视线与法线成90度，则为边缘
 				fixed dotProduct = 1 - saturate(dot(v.normal, viewDir));
-				o.rimColor = smoothstep(1 - _FresnelWidth, 1.0, dotProduct) * .5f;
+				o.rimColor = smoothstep(- _FresnelWidth, 1.0, dotProduct) * .5f;
 				o.screenPos = ComputeScreenPos(o.vertex);
 				COMPUTE_EYEDEPTH(o.screenPos.z);//eye space depth of the vertex 
 				return o;
@@ -68,7 +69,7 @@
 			
 			fixed4 frag (v2f i, fixed face : VFACE) : SV_Target
 			{
-				//intersection
+				//intersection 1-0 0表示相交，1表示不相交
 				fixed intersect = saturate((abs(LinearEyeDepth(tex2Dproj(_CameraDepthTexture,i.screenPos).r) - i.screenPos.z)) / _IntersectThreshold);
 
 				fixed3 main = tex2D(_MainTex, i.uv);
@@ -79,7 +80,7 @@
 
 				//intersect hightlight
 				i.rimColor *= intersect * clamp(0,1,face);
-				main *= _MainColor * pow(_Fresnel,i.rimColor) ;
+				main *= _MainColor * pow(_Fresnel,i.rimColor);
 				
 				//lerp distort color & fresnel color
 				main = lerp(distortColor, main, i.rimColor.r);
