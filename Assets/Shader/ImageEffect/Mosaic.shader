@@ -3,6 +3,8 @@
 	Properties
 	{
 		_MainTex ("Texture", 2D) = "white" {}
+		_RowCount("RowCount",float) = 300
+		_ColumnCount("ColumnCount",float) = 500
 	}
 	SubShader
 	{
@@ -29,6 +31,9 @@
 				float4 vertex : SV_POSITION;
 			};
 
+			fixed _RowCount;
+			fixed _ColumnCount;
+
 			v2f vert (appdata v)
 			{
 				v2f o;
@@ -41,9 +46,15 @@
 
 			fixed4 frag (v2f i) : SV_Target
 			{
-				fixed4 col = tex2D(_MainTex, i.uv);
-				// just invert the colors
-				col = 1 - col;
+				fixed2 mosica_uv = i.uv;
+
+				mosica_uv.x = round(i.uv.x * _ColumnCount);
+				mosica_uv.y = round(i.uv.y * _RowCount);
+
+				mosica_uv.x = mosica_uv.x / _ColumnCount;
+				mosica_uv.y = mosica_uv.y / _RowCount;
+
+				fixed4 col = tex2D(_MainTex, mosica_uv);
 				return col;
 			}
 			ENDCG
