@@ -72,18 +72,23 @@
 				//intersection 1-0 0表示相交，1表示不相交
 				fixed intersect = saturate((abs(LinearEyeDepth(tex2Dproj(_CameraDepthTexture,i.screenPos).r) - i.screenPos.z)) / _IntersectThreshold);
 
+				//一般来说是一张黑白图
 				fixed3 main = tex2D(_MainTex, i.uv);
 				//distortion
 
 				fixed3 distortColor = tex2Dproj(_GrabTexture, i.screenPos);
-				distortColor *= _MainColor * _MainColor.a + 1;
+				//distortColor *= _MainColor * _MainColor.a + 1;
 
 				//intersect hightlight
+				//越边缘的并且不相交的地方rim值越高，且背面的rim值为0
 				i.rimColor *= intersect * clamp(0,1,face);
+				//主贴图中白的地方会显示成_mainColor,并且越边缘的会越接近_mainColor
 				main *= _MainColor * pow(_Fresnel,i.rimColor);
 				
 				//lerp distort color & fresnel color
+				//越接近边缘的部分显示main与_mainColor的混合颜色，否则显示背景
 				main = lerp(distortColor, main, i.rimColor.r);
+				//相交的地方加上_MainColor，正面像素加的比例比较少，背面加比较多
 				main += (1 - intersect) * (face > 0 ? .03:.3) * _MainColor * _Fresnel;
 				return fixed4(main,.9);
 			}
