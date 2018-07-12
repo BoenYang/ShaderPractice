@@ -64,7 +64,7 @@
 
 			float GetDepth(float3 worldPos,float4x4 lightTrans,sampler2D depthMap,out float3 posInLight){
 				posInLight = mul(lightTrans,float4(worldPos,1)).xyz;
-				return DecodeFloatRGBA(tex2D(depthMap,posInLight.xy));
+				return tex2D(depthMap,posInLight.xy).r;
 			}
 
 			float GetShadowBias(float3 worldNormal,float4x4 lightTrans,float slopeFactor,float depthBias){
@@ -72,8 +72,8 @@
 				return (1 - normalInLight.z) * slopeFactor + depthBias;
 			}
 
-				float GetNearDepth(float3 pos,float bias,sampler2D depthMap,float offsetX,float offsetY,float factor){
-				return (pos.z - bias) > DecodeFloatRGBA(tex2D(depthMap,float2(pos.x + offsetX,pos.y + offsetY))) ? factor : 0;
+			float GetNearDepth(float3 pos,float bias,sampler2D depthMap,float offsetX,float offsetY,float factor){
+				return (pos.z - bias) > tex2D(depthMap,float2(pos.x + offsetX,pos.y + offsetY)).r ? factor : 0;
 			}
 
 			float GetShadowAttenPCF(float3 pos,float bias,sampler2D depthMap,float pixelWidth,float pixelHeight){
@@ -96,17 +96,20 @@
 				float shadowDepth = GetDepth(worldPos,_LightProjection,_ShadowDepthMap,posInLight);
 				float shadowBias = GetShadowBias(worldNormal,_LightProjection,_slopeScaleDepthBias,_depthBias);
 				float strength = GetShadowAttenPCF(posInLight,shadowBias,_ShadowDepthMap,_pixelWidth,_pixelHeight);
-				return 1 - strength;
+				return strength;
 			}
 
 		
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
+				float3 posInLight;
+				float depth =  GetDepth(i.worldPos,_LightProjection,_ShadowDepthMap,posInLight);
+				float shadow = (posInLight.z - _depthBias) > depth ? 1.0 : 0;
 				// sample the texture
-				fixed4 col = tex2D(_MainTex, i.uv) * GetShadowAtten(i.worldPos,i.worldNormal);
-
+				fixed4 col = tex2D(_MainTex, i.uv) * shadow;
 				return col;
+				return fixed4(i.vertex.z,i.vertex.z,i.vertex.z,1.0);
 			}
 			ENDCG
 		}

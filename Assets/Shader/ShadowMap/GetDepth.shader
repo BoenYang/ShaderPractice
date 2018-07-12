@@ -6,13 +6,15 @@
 		LOD 200
 
 		Pass
-		{
+		{	
+			//Cull Front
 			CGPROGRAM
 
 			#pragma vertex vert
 			#pragma fragment frag
 			
 			#include "UnityCG.cginc"
+
 
 
 			struct appdata
@@ -38,7 +40,9 @@
 			
 			float4 frag (v2f i) : COLOR
 			{
-				return EncodeFloatRGBA(i.depth.x/ i.depth.y);
+				float depth = i.depth.x/i.depth.y ;
+				return fixed4(depth,depth,depth,1.0);
+                //return EncodeFloatRGBA(depth) ;
 			}
 			ENDCG
 		}

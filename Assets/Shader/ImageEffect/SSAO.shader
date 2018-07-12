@@ -119,7 +119,7 @@ Shader "Hidden/SSAO"
 
 
 				half radius = max(_Radius / eyeDepth, 0.005);
-				clip(_DistanceCutoff - eyeDepth); // Skip out of range pixels
+				//clip(_DistanceCutoff - eyeDepth); // Skip out of range pixels
 
 				half ao = 0.0;
 				for(int i = 0; i < 4; i++){
@@ -143,8 +143,9 @@ Shader "Hidden/SSAO"
 
 			fixed4 frag (v2f i) : SV_Target
 			{
+				half4 col = tex2D(_MainTex,i.uv);
 				half ao = ssao(i.uv);
-				return half4(ao.xxx,1.0);
+				return fixed4(col.rgb*ao,col.a);
 			}
 			ENDCG
 		}

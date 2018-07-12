@@ -12,10 +12,10 @@ public class ShadowMap : MonoBehaviour
 
     private Camera lightCamera;
 
-	// Use this for initialization
-	void Start () {
-	    CreateShadowCamera();
-	}
+    // Use this for initialization
+    void Start() {
+        CreateShadowCamera();
+    }
 
     private void CreateShadowCamera()
     {
@@ -23,16 +23,15 @@ public class ShadowMap : MonoBehaviour
         cameraGo.transform.SetParent(transform);
         cameraGo.transform.localPosition = Vector3.zero;
         cameraGo.transform.localRotation = Quaternion.identity;
-        
+
         lightCamera = cameraGo.AddComponent<Camera>();
         lightCamera.orthographic = true;
         lightCamera.clearFlags = CameraClearFlags.Color;
-        lightCamera.backgroundColor = Color.black;
+        lightCamera.backgroundColor = Color.white;
         lightCamera.targetTexture = ShadowMapRt;
         lightCamera.enabled = false;
 
-
-        Shader.SetGlobalTexture("_ShadowDepthMap",ShadowMapRt);
+        Shader.SetGlobalTexture("_ShadowDepthMap", ShadowMapRt);
         SetFitToScene();
 
         CaptureDepth depthCapture = cameraGo.AddComponent<CaptureDepth>();
@@ -58,25 +57,26 @@ public class ShadowMap : MonoBehaviour
 
         Matrix4x4 sceneLocalToWorldMat = SceneAABB.transform.localToWorldMatrix;
 
-        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3(  0.5f,  0.5f,  0.5f)));
-        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3( -0.5f,  0.5f,  0.5f)));
-        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3(  0.5f, -0.5f,  0.5f)));
-        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3( -0.5f, -0.5f,  0.5f)));
-        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3(  0.5f,  0.5f, -0.5f)));
-        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3( -0.5f,  0.5f, -0.5f)));
-        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3(  0.5f, -0.5f, -0.5f)));
-        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3( -0.5f, -0.5f, -0.5f)));
+        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3(0.5f, 0.5f, 0.5f)));
+        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3(-0.5f, 0.5f, 0.5f)));
+        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3(0.5f, -0.5f, 0.5f)));
+        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3(-0.5f, -0.5f, 0.5f)));
+        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3(0.5f, 0.5f, -0.5f)));
+        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3(-0.5f, 0.5f, -0.5f)));
+        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3(0.5f, -0.5f, -0.5f)));
+        sceneAABBVertex.Add(sceneLocalToWorldMat.MultiplyPoint(new Vector3(-0.5f, -0.5f, -0.5f)));
 
         BoundBox3D box = new BoundBox3D();
-        sceneAABBVertex.ForEach((v)=> box.Update(transform.worldToLocalMatrix.MultiplyPoint(v)));
+        sceneAABBVertex.ForEach((v) => box.Update(transform.worldToLocalMatrix.MultiplyPoint(v)));
 
-        lightCamera.transform.localPosition = new Vector3(box.CenterX,box.CenterY,0);
-        lightCamera.orthographicSize = Mathf.Max(box.SizeX/2, box.SizeY/2);
+        lightCamera.transform.localPosition = new Vector3(box.CenterX, box.CenterY, 0);
+        lightCamera.orthographicSize = Mathf.Max(box.SizeX / 2, box.SizeY / 2);
         lightCamera.nearClipPlane = box.MinZ - lightCamera.transform.localPosition.z;
         lightCamera.farClipPlane = box.MaxZ - lightCamera.transform.localPosition.z;
 
 
     }
+
 }
 
 public class BoundBox3D
