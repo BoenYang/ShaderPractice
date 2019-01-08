@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -9,6 +10,8 @@ public class Wave : MonoBehaviour
     public int Height;
 
     public int Width;
+
+    public int Segment = 10;
 
     public MeshFilter meshFilter;
 
@@ -27,6 +30,12 @@ public class Wave : MonoBehaviour
     private Vector2[] m_uvs;
 
     private WaterSurfacePoint[] surfacePoints;
+
+    private int surfacePointCount = 0;
+
+    private float m_surfacePointGap = 0;
+
+    private float m_topLeftX;
 
     [System.Serializable]
     public class WaterSurfacePoint
@@ -50,46 +59,66 @@ public class Wave : MonoBehaviour
         }
     }
 
+    void OnValidate()
+    {
+        if (Segment <= 0)
+        {
+            Segment = 1;
+        }
+
+        if (Width <= 0)
+        {
+            Width = 1;
+        }
+
+        if (Height <= 0)
+        {
+            Height = 1;
+        }
+    }
+
     void Start()
     {
-        m_vertices = new Vector3[Width * 2];
-        m_indies = new int[(Width - 1) * 6];
-        m_uvs = new Vector2[Width * 2];
-        surfacePoints = new WaterSurfacePoint[Width];
-        m_waveMesh = new Mesh();
-        meshFilter.sharedMesh = m_waveMesh;
         GenerateWaveMesh();
     }
 
     public void GenerateWaveMesh()
     {
-        Debug.Log("Generate Wave Mesh" + Width);
-        float topLeftX = - (Width - 1) / 2f;
+        m_waveMesh = new Mesh();
+        meshFilter.sharedMesh = m_waveMesh;
+
+        surfacePointCount = Segment;
+        m_vertices = new Vector3[surfacePointCount * 2];
+        m_indies = new int[(surfacePointCount - 1) * 6];
+        m_uvs = new Vector2[surfacePointCount * 2];
+        m_uvs = new Vector2[surfacePointCount * 2];
+        surfacePoints = new WaterSurfacePoint[surfacePointCount];
+
+        m_topLeftX = - (Width - 1 )/ 2f;
         float topLeftY = (Height - 1) / 2f;
-
-
         int vertexIndex = 0;
-        for (int i = 0; i < Width; i++)
+        m_surfacePointGap = Width / (float) Segment;
+        for (int i = 0; i < surfacePointCount; i++)
         {
-            m_vertices[i] = new Vector3(topLeftX + i, topLeftY, 0);
-            m_vertices[Width + i] = new Vector3(topLeftX + i,topLeftY - Height);
-            m_uvs[i] = new Vector2(i/(float)Width,0);
-            m_uvs[Width + i] = new Vector2(i/(float)Width, 1);
+            m_vertices[i] = new Vector3(m_topLeftX + i * m_surfacePointGap, topLeftY, 0);
+            m_vertices[surfacePointCount + i] = new Vector3(m_topLeftX + i * m_surfacePointGap, topLeftY - Height);
+            m_uvs[i] = new Vector2(i/(float)surfacePointCount, 0);
+            m_uvs[surfacePointCount + i] = new Vector2(i/(float)surfacePointCount, 1);
 
             surfacePoints[i] = new WaterSurfacePoint(Height);
 
-            if (i < Width - 1)
+            if (i < surfacePointCount - 1)
             {
                 m_indies[vertexIndex++] = i;
-                m_indies[vertexIndex++] = Width + i + 1;
-                m_indies[vertexIndex++] = Width + i;
+                m_indies[vertexIndex++] = surfacePointCount + i + 1;
+                m_indies[vertexIndex++] = surfacePointCount + i;
 
-                m_indies[vertexIndex++] = Width + i + 1;
+                m_indies[vertexIndex++] = surfacePointCount + i + 1;
                 m_indies[vertexIndex++] = i;
                 m_indies[vertexIndex++] = i + 1;
             }
         }
-        
+        UpdateWaveMesh();
     }
 
     void SimulatePhysics()
@@ -138,10 +167,9 @@ public class Wave : MonoBehaviour
     {
         for (int i = 0; i < surfacePoints.Length; i++)
         {
-            m_vertices[i].y = -(Height - 1) / 2.0f + surfacePoints[i].Height;
+            m_vertices[i].y = -(Height - 1)/ 2.0f + surfacePoints[i].Height - 1;
         }
     }
-
 
     void UpdateWaveMesh()
     {
@@ -151,17 +179,32 @@ public class Wave : MonoBehaviour
         m_waveMesh.RecalculateNormals();
     }
 
-
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
             int index = Random.Range(0, this.surfacePoints.Length);
-            surfacePoints[5].Velocity = -5;
+            surfacePoints[surfacePoints.Length/2].Velocity = -10;
         }
 
         SimulatePhysics();
         UpdateVertices();
         UpdateWaveMesh();
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        RaycastHit2D[] hits = new RaycastHit2D[10];
+        int hitCount = collision.Raycast(Vector2.down, hits, 1);
+        Debug.Log(hitCount);
+        if (hitCount > 0)
+        {
+            float x = hits[0].point.x;
+            float distanceFromLeft = x - m_topLeftX;
+            int colliderSurfacePointIndex = (int) (distanceFromLeft / m_surfacePointGap);
+            Rigidbody2D rb = collision.GetComponent<Rigidbody2D>();
+            surfacePoints[colliderSurfacePointIndex].Velocity = rb.velocity.y;
+            Debug.Log(rb.velocity.y);
+        }
     }
 }
