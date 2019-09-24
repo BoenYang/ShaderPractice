@@ -7,6 +7,8 @@ using Random = UnityEngine.Random;
 
 public class Wave : MonoBehaviour
 {
+    public static Wave Ins;
+
     public int Height;
 
     public int Width;
@@ -36,6 +38,8 @@ public class Wave : MonoBehaviour
     private float m_surfacePointGap = 0;
 
     private float m_topLeftX;
+
+    private float m_topLeftY;
 
     [System.Serializable]
     public class WaterSurfacePoint
@@ -77,6 +81,11 @@ public class Wave : MonoBehaviour
         }
     }
 
+    private void Awake()
+    {
+        Ins = this;
+    }
+
     void Start()
     {
         GenerateWaveMesh();
@@ -95,13 +104,13 @@ public class Wave : MonoBehaviour
         surfacePoints = new WaterSurfacePoint[surfacePointCount];
 
         m_topLeftX = - (Width - 1 )/ 2f;
-        float topLeftY = (Height - 1) / 2f;
+        m_topLeftY = (Height - 1) / 2f;
         int vertexIndex = 0;
         m_surfacePointGap = Width / (float) Segment;
         for (int i = 0; i < surfacePointCount; i++)
         {
-            m_vertices[i] = new Vector3(m_topLeftX + i * m_surfacePointGap, topLeftY, 0);
-            m_vertices[surfacePointCount + i] = new Vector3(m_topLeftX + i * m_surfacePointGap, topLeftY - Height);
+            m_vertices[i] = new Vector3(m_topLeftX + i * m_surfacePointGap, m_topLeftY, 0);
+            m_vertices[surfacePointCount + i] = new Vector3(m_topLeftX + i * m_surfacePointGap, m_topLeftY - Height);
             m_uvs[i] = new Vector2(i/(float)surfacePointCount, 0);
             m_uvs[surfacePointCount + i] = new Vector2(i/(float)surfacePointCount, 1);
 
@@ -119,6 +128,25 @@ public class Wave : MonoBehaviour
             }
         }
         UpdateWaveMesh();
+    }
+
+    public float CaculateUnderWaterDistance(Vector2 worldPos) {
+
+        Vector2 topLeftLocalPos = new Vector2(m_topLeftX, m_topLeftX);
+        Vector2 topLeftWorldPos = transform.TransformPoint(topLeftLocalPos);
+
+        float distanceFromLeft = worldPos.x - topLeftWorldPos.x;
+
+        int nearestSurfacePointIndex = Mathf.FloorToInt(distanceFromLeft / m_surfacePointGap);
+
+
+        if (nearestSurfacePointIndex < 0 || nearestSurfacePointIndex >= surfacePoints.Length) {
+            return 0;
+        }
+
+        Vector2 nearestSurfacePoint = m_vertices[nearestSurfacePointIndex];
+        Vector2 nearestSurfacePointWordPos = transform.TransformPoint(nearestSurfacePoint);
+        return worldPos.y - nearestSurfacePointWordPos.y;
     }
 
     void SimulatePhysics()
@@ -194,17 +222,15 @@ public class Wave : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        RaycastHit2D[] hits = new RaycastHit2D[10];
-        int hitCount = collision.Raycast(Vector2.down, hits, 1);
-        Debug.Log(hitCount);
-        if (hitCount > 0)
-        {
-            float x = hits[0].point.x;
-            float distanceFromLeft = x - m_topLeftX;
-            int colliderSurfacePointIndex = (int) (distanceFromLeft / m_surfacePointGap);
-            Rigidbody2D rb = collision.GetComponent<Rigidbody2D>();
-            surfacePoints[colliderSurfacePointIndex].Velocity = rb.velocity.y;
-            Debug.Log(rb.velocity.y);
-        }
+        //RaycastHit2D[] hits = new RaycastHit2D[10];
+        //int hitCount = collision.Raycast(Vector2.down, hits, 1);
+        //if (hitCount > 0)
+        //{
+        //    float x = hits[0].point.x;
+        //    float distanceFromLeft = x - m_topLeftX;
+        //    int colliderSurfacePointIndex = (int) (distanceFromLeft / m_surfacePointGap);
+        //    Rigidbody2D rb = collision.GetComponent<Rigidbody2D>();
+        //    surfacePoints[colliderSurfacePointIndex].Velocity = rb.velocity.y;
+        //}
     }
 }
