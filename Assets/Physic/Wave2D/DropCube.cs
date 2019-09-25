@@ -15,12 +15,71 @@ public class DropCube : MonoBehaviour
         public Vector3 p2;
         public Vector3 p3;
 
+        public float Area { get { return area; } }
+
+        public Vector3 CenterPos { get { return centerPos; } }
+
+        private float area;
+
+        private Vector3 centerPos;
+
         public TriangleData(Vector3 p1, Vector3 p2, Vector3 p3) {
             this.p1 = p1;
             this.p2 = p2;
             this.p3 = p3;
+
+
+            this.centerPos = (p1 + p2 + p3) / 3.0f;
+
+            float a = Vector3.Distance(p1, p2);
+
+            float c = Vector3.Distance(p3, p1);
+
+            this.area = (a * c * Mathf.Sin(Vector3.Angle(p2 - p1, p3 - p1) * Mathf.Deg2Rad)) / 2f;
         }
 
+    }
+
+    private class PolygonData {
+
+        public List<TriangleData> triangles;
+
+        private float area = 0;
+
+        private Vector3 centerPos;
+
+        public float Area { get { return area; } }
+
+        public Vector3 CenterPos { get
+            {
+                if (area > float.Epsilon)
+                {
+                    return centerPos / area;
+                }
+                else
+                {
+                    return centerPos;
+                }
+            }
+        }
+
+        public PolygonData() {
+            triangles = new List<TriangleData>();
+            centerPos = Vector3.zero;
+            area = 0;
+        }
+
+        public void AddTriangleData(TriangleData triangle) {
+            triangles.Add(triangle);
+            area += triangle.Area;
+            centerPos += area * triangle.CenterPos;
+        }
+
+        public void Reset() {
+            triangles.Clear();
+            centerPos = Vector3.zero;
+            area = 0;
+        }
     }
 
     private MeshFilter m_meshFilter;
@@ -33,12 +92,14 @@ public class DropCube : MonoBehaviour
 
     private MeshPoint[] m_meshPoints;
 
-    private List<TriangleData> underWaterTriangles;
+    private PolygonData underWaterPolygon;
 
+    private Rigidbody2D rb;
 
 
     private void Start()
     {
+        rb = GetComponent<Rigidbody2D>();
         m_meshFilter = GetComponent<MeshFilter>();
         m_mesh = m_meshFilter.mesh;
 
@@ -55,12 +116,13 @@ public class DropCube : MonoBehaviour
             m_meshPoints[i] = new MeshPoint();
         }
 
-        underWaterTriangles = new List<TriangleData>();
+        underWaterPolygon = new PolygonData();
     }
 
     void Update() {
         CaluateUnderWaterDistance();
         DisplayUnderWaterMesh();
+        ApplyBouncyForce();
     }
 
     void CaluateUnderWaterDistance() {
@@ -77,7 +139,7 @@ public class DropCube : MonoBehaviour
         }
 
 
-        Debug.Log(underWaterPointCount);
+        //Debug.Log(underWaterPointCount);
 
 
         int[] triangles = m_mesh.triangles;
@@ -90,7 +152,7 @@ public class DropCube : MonoBehaviour
         trianglePoints.Add(new MeshPoint());
 
 
-        underWaterTriangles.Clear();
+        underWaterPolygon.Reset();
 
         while (j < triangles.Length) {
 
@@ -115,7 +177,8 @@ public class DropCube : MonoBehaviour
                 Vector3 p1 = trianglePoints[0].worldPos;
                 Vector3 p2 = trianglePoints[1].worldPos;
                 Vector3 p3 = trianglePoints[2].worldPos;
-                underWaterTriangles.Add(new TriangleData(p1, p2, p3));
+
+                underWaterPolygon.AddTriangleData(new TriangleData(p1, p2, p3));
             }
             else {
    
@@ -179,8 +242,9 @@ public class DropCube : MonoBehaviour
         float t_L = -h_L / (h_H - h_L);
         Vector3 I_L = L + t_L * LH;
 
-        underWaterTriangles.Add(new TriangleData(M,I_M,I_L));
-        underWaterTriangles.Add(new TriangleData(M,I_L,L));
+        underWaterPolygon.AddTriangleData(new TriangleData(M, I_M, I_L));
+        underWaterPolygon.AddTriangleData(new TriangleData(M, I_L, L));
+
     }
 
     void AddTrianglesTwoAboveWater(List<MeshPoint> trianglePoints)
@@ -199,42 +263,63 @@ public class DropCube : MonoBehaviour
         Vector3 H = Vector3.zero;
         Vector3 M = Vector3.zero;
 
-        if (trianglePoints[0].index == H_index)
+        if (trianglePoints[1].index == H_index)
         {
-            h_H = trianglePoints[0].underWaterDistance;
-            h_M = trianglePoints[1].underWaterDistance;
-
-            H = trianglePoints[0].worldPos;
-            M = trianglePoints[1].worldPos;
-        }
-        else {
             h_H = trianglePoints[1].underWaterDistance;
             h_M = trianglePoints[0].underWaterDistance;
 
             H = trianglePoints[1].worldPos;
             M = trianglePoints[0].worldPos;
         }
+        else {
+            h_H = trianglePoints[0].underWaterDistance;
+            h_M = trianglePoints[1].underWaterDistance;
+
+            H = trianglePoints[0].worldPos;
+            M = trianglePoints[1].worldPos;
+        }
+
+
+        Vector3 LM = M - L;
+        float t_M = -h_L / (h_M - h_L);
+        Vector3 J_M = L + t_M * LM;
 
         Vector3 LH = H - L;
         float t_H = -h_L / (h_H - h_L);
         Vector3 J_H = L + t_H * LH;
 
-        Vector3 LM = M - L;
-        float t_M = -h_L / (h_M - h_L);
-        Vector3 J_M = L + t_H * LM;
+        underWaterPolygon.AddTriangleData(new TriangleData(L, J_H, J_M));
+    }
 
-        underWaterTriangles.Add(new TriangleData(L,J_H,J_M));
+    void ApplyBouncyForce() {
+
+        if (underWaterPolygon.triangles.Count == 0) {
+            return;
+        }
+
+        float polygonUnderwaterDistance = Wave.Ins.CaculateUnderWaterDistance(underWaterPolygon.CenterPos);
+        Vector2 bouyanceForce = Wave.Ins.rho * Physics2D.gravity * underWaterPolygon.Area * polygonUnderwaterDistance;
+        Vector3 localCenterPos = transform.InverseTransformPoint(underWaterPolygon.CenterPos);
+
+        Debug.Log("浮力" + bouyanceForce);
+        //rb.AddForce(bouyanceForce);
+        rb.AddForceAtPosition(bouyanceForce, localCenterPos,ForceMode2D.Force);
     }
 
     void DisplayUnderWaterMesh() {
         List<Vector3> vertices = new List<Vector3>();
         List<int> triangles = new List<int>();
 
-        Debug.Log("水下三角形数量" + underWaterTriangles.Count);
-        for (int i = 0; i < underWaterTriangles.Count; i++) {
-            Vector3 p1 = transform.InverseTransformPoint(underWaterTriangles[i].p1);
-            Vector3 p2 = transform.InverseTransformPoint(underWaterTriangles[i].p2);
-            Vector3 p3 = transform.InverseTransformPoint(underWaterTriangles[i].p3);
+
+        //Debug.Log("水下三角形数量" + underWaterPolygon.triangles.Count);
+
+        List<TriangleData> triangleList = underWaterPolygon.triangles;
+        for (int i = 0; i < triangleList.Count; i++) {
+
+
+            Vector3 p1 = transform.InverseTransformPoint(triangleList[i].p1);
+            Vector3 p2 = transform.InverseTransformPoint(triangleList[i].p2);
+            Vector3 p3 = transform.InverseTransformPoint(triangleList[i].p3);
 
             vertices.Add(p1);
             triangles.Add(vertices.Count - 1);
@@ -254,7 +339,7 @@ public class DropCube : MonoBehaviour
 
             m_underWaterMesh.RecalculateNormals();
 
-            Debug.Log("水下部分顶点数" + vertices.Count);
+            //Debug.Log("水下部分顶点数" + vertices.Count);
         }
     }
 

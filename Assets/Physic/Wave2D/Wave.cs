@@ -15,6 +15,8 @@ public class Wave : MonoBehaviour
 
     public int Segment = 10;
 
+    public float rho = 1;
+
     public MeshFilter meshFilter;
 
     public float Spread = 0.25f;
