@@ -209,7 +209,7 @@ public class Wave : MonoBehaviour
         m_waveMesh.RecalculateNormals();
     }
 
-    void Update()
+    void FixedUpdate()
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {

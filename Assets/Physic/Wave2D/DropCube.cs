@@ -54,6 +54,7 @@ public class DropCube : MonoBehaviour
             {
                 if (area > float.Epsilon)
                 {
+                    //Debug.Log("Center Pos = " + centerPos + " Area = " + area);
                     return centerPos / area;
                 }
                 else
@@ -72,7 +73,7 @@ public class DropCube : MonoBehaviour
         public void AddTriangleData(TriangleData triangle) {
             triangles.Add(triangle);
             area += triangle.Area;
-            centerPos += area * triangle.CenterPos;
+            centerPos += triangle.Area * triangle.CenterPos;
         }
 
         public void Reset() {
@@ -96,6 +97,8 @@ public class DropCube : MonoBehaviour
 
     private Rigidbody2D rb;
 
+    private float density;
+
 
     private void Start()
     {
@@ -117,12 +120,14 @@ public class DropCube : MonoBehaviour
         }
 
         underWaterPolygon = new PolygonData();
+
+        density = rb.mass;
     }
 
-    void Update() {
+    void FixedUpdate() {
         CaluateUnderWaterDistance();
-        DisplayUnderWaterMesh();
         ApplyBouncyForce();
+        DisplayUnderWaterMesh();
     }
 
     void CaluateUnderWaterDistance() {
@@ -173,7 +178,7 @@ public class DropCube : MonoBehaviour
             //三个顶点都在水面以下
             if (trianglePoints[0].underWaterDistance < 0 && trianglePoints[1].underWaterDistance < 0 && trianglePoints[2].underWaterDistance < 0)
             {
-                Debug.Log("三个顶点都在水面下");
+                //Debug.Log("三个顶点都在水面下");
                 Vector3 p1 = trianglePoints[0].worldPos;
                 Vector3 p2 = trianglePoints[1].worldPos;
                 Vector3 p3 = trianglePoints[2].worldPos;
@@ -189,13 +194,13 @@ public class DropCube : MonoBehaviour
                 //有一个顶点在水上
                 if (trianglePoints[0].underWaterDistance > 0 && trianglePoints[1].underWaterDistance < 0 && trianglePoints[2].underWaterDistance < 0)
                 {
-                    Debug.Log("两个顶点在水面下");
+                    //Debug.Log("两个顶点在水面下");
                     this.AddTrianglesOneAboveWater(trianglePoints);
                 }
                 //有两个顶点在水上
                 else if(trianglePoints[0].underWaterDistance > 0 && trianglePoints[1].underWaterDistance > 0 && trianglePoints[2].underWaterDistance < 0)
                 {
-                    Debug.Log("一个顶点在水面下");
+                    //Debug.Log("一个顶点在水面下");
                     this.AddTrianglesTwoAboveWater(trianglePoints);
                 }
             }
@@ -291,20 +296,61 @@ public class DropCube : MonoBehaviour
         underWaterPolygon.AddTriangleData(new TriangleData(L, J_H, J_M));
     }
 
-    void ApplyBouncyForce() {
+    void ApplyBouncyForce()
+    {
 
-        if (underWaterPolygon.triangles.Count == 0) {
+        if (underWaterPolygon.triangles.Count == 0)
+        {
             return;
         }
 
-        float polygonUnderwaterDistance = Wave.Ins.CaculateUnderWaterDistance(underWaterPolygon.CenterPos);
-        Vector2 bouyanceForce = Wave.Ins.rho * Physics2D.gravity * underWaterPolygon.Area * polygonUnderwaterDistance;
-        Vector3 localCenterPos = transform.InverseTransformPoint(underWaterPolygon.CenterPos);
+   
+        Vector3 bouyanceForce;
+        Vector3 localCenterPos;
 
-        Debug.Log("浮力" + bouyanceForce);
-        //rb.AddForce(bouyanceForce);
-        rb.AddForceAtPosition(bouyanceForce, localCenterPos,ForceMode2D.Force);
+        //List<TriangleData> triangleList = underWaterPolygon.triangles;
+        //for (int i = 0; i < triangleList.Count; i++)
+        //{
+        //    float underwaterDistance = Wave.Ins.CaculateUnderWaterDistance(triangleList[i].CenterPos);
+        //    bouyanceForce = CaculateBouyanceForce(rb.mass / 5, triangleList[i].Area, underwaterDistance);
+        //    localCenterPos = transform.InverseTransformPoint(triangleList[i].CenterPos);
+        //    rb.AddForceAtPosition(bouyanceForce, localCenterPos, ForceMode2D.Force);
+        //}
+
+
+        Vector3 polygonCenterPos = underWaterPolygon.CenterPos;
+        float polygonUnderwaterDistance = Wave.Ins.CaculateUnderWaterDistance(polygonCenterPos);
+        bouyanceForce = CaculateBouyanceForce(density, underWaterPolygon.Area, polygonUnderwaterDistance);
+        localCenterPos = transform.InverseTransformPoint(polygonCenterPos);
+        rb.AddForceAtPosition(bouyanceForce, localCenterPos, ForceMode2D.Force);
+
+        Debug.Log("浮力" + bouyanceForce + " local center pos " + localCenterPos + " world center pos " + polygonCenterPos + " underwater area = " + underWaterPolygon.Area);
+
+        ApplyDrag();
+
     }
+
+    Vector2 CaculateBouyanceForce(float density, float area, float underWaterDistance)
+    {
+        Vector2 bouyanceForce = density * area * Physics2D.gravity * underWaterDistance;
+        return bouyanceForce;
+    }
+
+    void ApplyDrag() {
+        Vector3 velocity = rb.velocity;
+        float vel = velocity.magnitude;
+
+        float dragMag = vel * vel * density;
+        Vector2 dragForce = - dragMag * velocity.normalized;
+        rb.AddForce(dragForce);
+
+        float angularDrag = - underWaterPolygon.Area * rb.angularVelocity;
+        rb.AddTorque(angularDrag);
+
+        Debug.Log("drag force = " + dragForce + " angular drag = " + angularDrag +  " angular velocity = " + rb.angularVelocity );
+    }
+
+
 
     void DisplayUnderWaterMesh() {
         List<Vector3> vertices = new List<Vector3>();
