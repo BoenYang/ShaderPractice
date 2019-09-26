@@ -99,6 +99,8 @@ public class DropCube : MonoBehaviour
 
     private float density;
 
+    private float area = 0;
+
 
     private void Start()
     {
@@ -122,12 +124,21 @@ public class DropCube : MonoBehaviour
         underWaterPolygon = new PolygonData();
 
         density = rb.mass;
+
+        area = transform.localScale.x * transform.localScale.y;
     }
 
     void FixedUpdate() {
         CaluateUnderWaterDistance();
         ApplyBouncyForce();
         DisplayUnderWaterMesh();
+    }
+
+    private void Update()
+    {
+        if (underWaterPolygon.triangles.Count > 0) {
+            //ApplyDrag();
+        }
     }
 
     void CaluateUnderWaterDistance() {
@@ -286,11 +297,11 @@ public class DropCube : MonoBehaviour
 
 
         Vector3 LM = M - L;
-        float t_M = -h_L / (h_M - h_L);
+        float t_M = - h_L / (h_M - h_L);
         Vector3 J_M = L + t_M * LM;
 
         Vector3 LH = H - L;
-        float t_H = -h_L / (h_H - h_L);
+        float t_H = - h_L / (h_H - h_L);
         Vector3 J_H = L + t_H * LH;
 
         underWaterPolygon.AddTriangleData(new TriangleData(L, J_H, J_M));
@@ -324,9 +335,9 @@ public class DropCube : MonoBehaviour
         localCenterPos = transform.InverseTransformPoint(polygonCenterPos);
         rb.AddForceAtPosition(bouyanceForce, localCenterPos, ForceMode2D.Force);
 
-        Debug.Log("浮力" + bouyanceForce + " local center pos " + localCenterPos + " world center pos " + polygonCenterPos + " underwater area = " + underWaterPolygon.Area);
+        Debug.Log("浮力" + bouyanceForce + " local center pos " + localCenterPos + " world center pos " + polygonCenterPos + " underwater area = " + underWaterPolygon.Area + " under water distance = " + polygonUnderwaterDistance);
 
-        ApplyDrag();
+        ApplyDrag(bouyanceForce);
 
     }
 
@@ -336,18 +347,32 @@ public class DropCube : MonoBehaviour
         return bouyanceForce;
     }
 
-    void ApplyDrag() {
+    void ApplyDrag(Vector2 bouyanceForce) {
         Vector3 velocity = rb.velocity;
         float vel = velocity.magnitude;
 
-        float dragMag = vel * vel * density;
+        float dragMag = vel *  underWaterPolygon.Area;
         Vector2 dragForce = - dragMag * velocity.normalized;
-        rb.AddForce(dragForce);
+        rb.drag = dragMag;
 
-        float angularDrag = - underWaterPolygon.Area * rb.angularVelocity;
-        rb.AddTorque(angularDrag);
+        float mg = -rb.mass * Physics2D.gravity.y;
+        float angularDrag = 0;
 
-        Debug.Log("drag force = " + dragForce + " angular drag = " + angularDrag +  " angular velocity = " + rb.angularVelocity );
+        Debug.Log("重力 = " + mg + " 浮力 = " + bouyanceForce.y);
+        //重力大于浮力
+        if ( Mathf.Abs(mg - bouyanceForce.y) <= 2 )
+        { 
+            angularDrag = 10000;
+        }
+        else  //重力小于浮力
+        {
+            angularDrag = rb.angularVelocity * 100 * mg / bouyanceForce.y ;
+        }
+
+        rb.angularDrag = Mathf.Abs(angularDrag);
+        //rb.AddTorque(angularDrag);
+
+        Debug.Log("drag force = " + dragForce + " angular drag = " + angularDrag +  " angular velocity = " + rb.angularVelocity + " under water area = " + underWaterPolygon.Area);
     }
 
 
