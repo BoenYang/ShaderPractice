@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.Profiling;
 
 public class SPHParticle {
 
@@ -15,13 +15,20 @@ public class SPHParticle {
     public Vector2 Force;
 
     public GameObject go;
+
+    public List<SPHParticle> neighbors;
+
+    public Transform goTr;
     
     public SPHParticle(Vector2 pos) {
         Position = pos;
         Velocity = Vector2.zero;
         go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        go.transform.localPosition = Position;
-        go.transform.localScale = Vector3.one * 0.25f;
+        goTr = go.transform;
+        goTr.localPosition = Position;
+        goTr.localScale = Vector3.one * 0.25f;
+        go.GetComponent<SphereCollider>().enabled = false;
+        neighbors = new List<SPHParticle>();
     }
 
 }
@@ -48,14 +55,32 @@ public class SPH : MonoBehaviour
 
     private List<SPHParticle> m_particles = new List<SPHParticle>();
 
+    private Transform cacheTr;
+
+    private float polyCoef;
+
+    private float gradientSpikyCoef;
+
+    private float viscosityLaplacianCoef;
+
+    private Grid2D grid;
+    
     // Start is called before the first frame update
     void Start()
     {
         InitParticles();
+        cacheTr = transform;
+
+        polyCoef = 315f / (64f * Mathf.PI * Mathf.Pow(SmoothRaidus, 9));
+
+        gradientSpikyCoef = 45f / (Mathf.PI * Mathf.Pow(SmoothRaidus, 6));
+
+        viscosityLaplacianCoef = 45f / (Mathf.PI * Mathf.Pow(SmoothRaidus, 6));
+
     }
 
     void InitParticles() {
-
+        m_particles.Clear();
         int side = (int)Mathf.Sqrt(ParticlesNum);
         float dx = SmoothRaidus * 0.75f;
         Vector2 startPos = new Vector2(transform.position.x - dx * side / 2, transform.position.y + dx * side / 2);
@@ -66,35 +91,55 @@ public class SPH : MonoBehaviour
                 m_particles.Add(p);
             }
         }
+
+        grid = new Grid2D(startPos, BoundSize, SmoothRaidus);
     }
 
 
-    private List<SPHParticle> m_TempParticelList = new List<SPHParticle>();
+    private List<SPHParticle> m_TempParticelList ;
 
-    // Update is called once per frame
-    void FixedUpdate()
+    void Update()
     {
+        grid.Clear();
 
+        for (int i = 0; i < m_particles.Count; i++) {
+            grid.Add(m_particles[i]);
+        }
+
+        Profiler.BeginSample("CalculateDensityAndPressure");
         //计算密度和压强
         for (int i = 0; i < m_particles.Count; i++)
         {
             SPHParticle p = m_particles[i];
             p.Density = 0;
-            m_TempParticelList.Clear();
-            GetNearParticle(p, m_TempParticelList);
-            //Debug.Log(m_TempParticelList.Count);
-            for (int j = 0; j < m_TempParticelList.Count; j++)
+            Profiler.BeginSample("Clear");
+            p.neighbors.Clear();
+            Profiler.EndSample();
+            Profiler.BeginSample("GetNeighbor");
+            m_TempParticelList = grid.GetNearby(p);
+            //GetNearParticle(p, m_TempParticelList);
+            Profiler.EndSample();
+            Profiler.BeginSample("AddRange");
+            p.neighbors.AddRange(m_TempParticelList);
+            Profiler.EndSample();
+            Profiler.BeginSample("GetDensity");
+            for (int j = 0; j < p.neighbors.Count; j++)
             {
-                float sqrDistance = (p.Position - m_TempParticelList[j].Position).sqrMagnitude;
-                p.Density += mass * Kernels.Poly6(sqrDistance, SmoothRaidus);
+                if (p.neighbors[j] != p) {
+                    float sqrDistance = (p.Position - p.neighbors[j].Position).sqrMagnitude;
+                    p.Density += mass * Kernels.Poly6(sqrDistance, polyCoef, SmoothRaidus);
+                }
             }
+            Profiler.EndSample();
 
             p.Density = Mathf.Max(p.Density, restDensity);
-
             p.Pressure = kStiffness * (p.Density - restDensity);
         }
+        Profiler.EndSample();
 
 
+
+        Profiler.BeginSample("CalculateForce");
         ////计算压力，粘力
         for (int i = 0; i < m_particles.Count; i++)
         {
@@ -104,44 +149,57 @@ public class SPH : MonoBehaviour
             Vector2 presureGradient = Vector2.zero;
             //粘力梯度
             Vector2 visosityGradient = Vector2.zero;
-            m_TempParticelList.Clear();
-            GetNearParticle(p, m_TempParticelList);
-            for (int j = 0; j < m_TempParticelList.Count; j++)
+            //m_TempParticelList.Clear();
+            //GetNearParticle(p, m_TempParticelList);
+            for (int j = 0; j < p.neighbors.Count; j++)
             {
-                presureGradient += PressureForce(p, m_TempParticelList[j]);
-                visosityGradient += VisosityForce(p, m_TempParticelList[j]);
+                if (p.neighbors[j] != p) {
+                    Profiler.BeginSample("PressureForce");
+                    presureGradient += PressureForce(p, p.neighbors[j]);
+                    Profiler.EndSample();
+                    Profiler.BeginSample("VisosityForce");
+                    visosityGradient += VisosityForce(p, p.neighbors[j]);
+                    Profiler.EndSample();
+                }
             }
 
             p.Force = presureGradient + visosityGradient;
             p.Force += Physics2D.gravity;
         }
+        Profiler.EndSample();
 
+        Profiler.BeginSample("CalculatePosition");
+        float dt = Time.fixedDeltaTime;
         //计算速度，加速度，位置
         for (int i = 0; i < m_particles.Count; i++) {
             SPHParticle p = m_particles[i];
+            Profiler.BeginSample("ForceBounds");
             ForceBounds(p);
+            Profiler.EndSample();
             Vector2 acceleration = p.Force;
-            float dt = Time.deltaTime;
             p.Velocity += acceleration * dt;
             //Vector2 deltaPos = p.Velocity * dt + 0.5f * acceleration * dt * dt;
             p.Position += p.Velocity * dt;
-            p.go.transform.localPosition = p.Position;
-
+            Profiler.BeginSample("SetPosition");
+            p.goTr.localPosition = p.Position;
+            Profiler.EndSample();
         }
+        Profiler.EndSample();
     }
 
     Vector2 PressureForce(SPHParticle currentParticle, SPHParticle neightborParticle) {
+
         float diviend = currentParticle.Pressure + neightborParticle.Pressure;
         float divisor = 2 * currentParticle.Density * neightborParticle.Density;
 
         Vector2 r = currentParticle.Position - neightborParticle.Position;
-        return -mass * (diviend / divisor) * Kernels.GradientSpiky(r, SmoothRaidus);
+        return -mass * (diviend / divisor) * Kernels.GradientSpiky(r, gradientSpikyCoef, SmoothRaidus);
     }
 
     Vector2 VisosityForce(SPHParticle currentParticle, SPHParticle neightborParticle) {
         Vector2 r = currentParticle.Position - neightborParticle.Position;
         Vector2 v = neightborParticle.Velocity - currentParticle.Velocity;
-        return Viscosity * v * (mass / currentParticle.Density) * Kernels.ViscosityLaplacian(r.magnitude, SmoothRaidus);
+        return Viscosity * v * (mass / currentParticle.Density) * Kernels.ViscosityLaplacian(r.magnitude,viscosityLaplacianCoef,SmoothRaidus);
     }
 
     private void GetNearParticle(SPHParticle particle, List<SPHParticle> list) {
@@ -162,10 +220,11 @@ public class SPH : MonoBehaviour
         float velocityDamping = 0.5f;
 
         Vector2 pos = p.Position;
-        float leftBoundX = - BoundSize.x / 2;
-        float rightBoundX = BoundSize.x / 2;
-        float bottomBoundY = - BoundSize.y / 2;
-        float topBoundY = BoundSize.y / 2;
+        Vector2 parentPos = cacheTr.position;
+        float leftBoundX = parentPos.x - BoundSize.x / 2;
+        float rightBoundX = parentPos.x + BoundSize.x / 2;
+        float bottomBoundY = parentPos.y - BoundSize.y / 2;
+        float topBoundY = parentPos.y + BoundSize.y / 2;
 
         //Debug.Log(bottomBoundY);
 

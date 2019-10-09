@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Kernels
 {
-    public static float Poly6(float sqrDistance, float smoothRadius) {
-        float coef = 315f / (64f * Mathf.PI * Mathf.Pow(smoothRadius, 9));
+
+    public static float Poly6(float sqrDistance, float coef, float smoothRadius) {
         float hSqr = smoothRadius * smoothRadius;
         if (hSqr < sqrDistance) {
             return 0;
@@ -15,23 +11,20 @@ public class Kernels
         return coef * Mathf.Pow(hSqr - sqrDistance,3);
     }
 
-    public static Vector2 GradientSpiky(Vector2 r, float smoothRaidus)
+    public static Vector2 GradientSpiky(Vector2 r, float coef, float smoothRaidus)
     {
-        float coef = 45f / (Mathf.PI * Mathf.Pow(smoothRaidus, 6));
         float distance = r.magnitude;
         if (smoothRaidus < distance) {
             return Vector2.zero;
         }
-
-        return -coef * r.normalized * Mathf.Pow(smoothRaidus - distance,2);
+        return -coef * r.normalized * (smoothRaidus - distance) * (smoothRaidus - distance);
     }
 
-    internal static float ViscosityLaplacian(float magnitude, float smoothRaidus)
+    internal static float ViscosityLaplacian(float magnitude, float coef, float smoothRaidus)
     {
         if (smoothRaidus < magnitude) {
             return 0f;
         }
-        float coef = 45f / (Mathf.PI * Mathf.Pow(smoothRaidus, 6));
         return coef * (smoothRaidus - magnitude);
     }
 }
