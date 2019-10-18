@@ -84,7 +84,6 @@ public class SPH : MonoBehaviour
         int side = (int)Mathf.Sqrt(ParticlesNum);
         float dx = SmoothRaidus * 0.75f;
         Vector2 startPos = new Vector2(transform.position.x - dx * side / 2, transform.position.y + dx * side / 2);
-        Debug.Log(startPos);
         for (int x = 0; x < side; x++) {
             for (int y = 0; y < side; y++) {
                 SPHParticle p = new SPHParticle(new Vector2(startPos.x + dx * x, startPos.y - dx * y));
@@ -136,7 +135,6 @@ public class SPH : MonoBehaviour
             p.Pressure = kStiffness * (p.Density - restDensity);
         }
         Profiler.EndSample();
-
 
 
         Profiler.BeginSample("CalculateForce");

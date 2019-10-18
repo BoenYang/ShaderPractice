@@ -2,23 +2,39 @@
 using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using UnityEditor;
 
+
+[ExecuteInEditMode]
 public class SSR : MonoBehaviour
 {
 
-    public InputField input;
+    [HideInInspector]
+    public Shader shader;
 
-	
-	// Update is called once per frame
-	void Update ()
-	{
-        input.onValidateInput += OnValidateInput;
-	    string tt = "fdafdsa";
-	}
 
-    private char OnValidateInput(string text, int charIndex, char addedChar)
-    {
-        Debug.Log(text + " " + charIndex);
-        return addedChar;
+    private Material _mat;
+
+
+    private Material mat {
+        get {
+            if (_mat == null) {
+                _mat = new Material(shader);
+            }
+            return _mat;
+        }
     }
+
+    private void Start() {
+        Camera camera = GetComponent<Camera>();
+        camera.depthTextureMode = DepthTextureMode.Depth;
+    }
+
+
+    private void OnRenderImage(RenderTexture source, RenderTexture destination) {
+        mat.SetMatrix("_WorldToView", GetComponent<Camera>().worldToCameraMatrix);
+        Graphics.Blit(source, destination, mat,0);
+    }
+
+
 }

@@ -23,6 +23,7 @@ public class Grid2D
         for (int i = 0; i < colNum * rowNum; i++) {
             cellDict.Add(i, new List<SPHParticle>());
         }
+
         Debug.Log(" col = " + colNum + " row = " + rowNum + " cell dict count = " + cellDict.Count);
     }
 
