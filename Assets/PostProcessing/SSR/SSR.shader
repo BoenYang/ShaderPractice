@@ -35,6 +35,7 @@
 			sampler2D _CameraGBufferTexture2;
 			float3x3 _WorldToView;
 			sampler2D _MainTex;
+			sampler2D _BackfaceTex;
 
             v2f vert (appdata v)
             {
@@ -48,22 +49,50 @@
             }
 
 
-#define RAY_LENGTH 2.0
+#define RAY_LENGTH 40.0
 #define STEP_COUNT 64
 
+			bool intersect(float raya, float rayb, float2 screenCoord) {
+
+				float camDepth = Linear01Depth(tex2Dlod(_CameraDepthTexture, float4(screenCoord.xy / 2 + 0.5, 0, 0)));
+				float backZ = tex2Dlod(_BackfaceTex, float4(screenCoord.xy / 2 + 0.5, 0, 0)).r;
+
+				if (raya > rayb) {
+					float t = raya;
+					raya = rayb;
+					rayb = t;
+				}
+
+				return raya < backZ && rayb > camDepth;
+			}
+
+
 			bool tracyRay(float3 start, float3 dir, out float2 hitPixel,out half3 debug) {
+
+				float rayLength = ((start.z + dir.z * RAY_LENGTH) > -_ProjectionParams.y) ?
+					(-_ProjectionParams.y - start.z) / dir.z : RAY_LENGTH;
+
+				float3 end = start + dir * rayLength;
+
+				float stepDelta = abs(end.z - start.z) / STEP_COUNT;
+				float preDepth = start.z / -_ProjectionParams.z;
+
+				float currentPos = start;
 
 				debug = 0;
 				UNITY_LOOP
 				for (int i = 1; i <= STEP_COUNT; i++) {
-					float3 p = start + (float)i / STEP_COUNT * RAY_LENGTH * dir;
-					float pDepth = p.z / -_ProjectionParams.z;
+					currentPos = start + i * stepDelta  * dir;
+					float currentDepth = currentPos.z / -_ProjectionParams.z;
 					float4 screenCoord = mul(unity_CameraProjection, float4(p, 1));
 					screenCoord /= screenCoord.w;
-					if (screenCoord.x < -1 || screenCoord.y < -1 || screenCoord.x > 1 || screenCoord.y > 1)
-						return false;
-					float camDepth = Linear01Depth(tex2Dlod(_CameraDepthTexture, float4(screenCoord.xy / 2 + 0.5, 0, 0)));
-					if (pDepth > camDepth&& pDepth < camDepth + 0.001) {
+					if (intersect(currentDepth, preDepth, screenCoord)) {
+
+						float3 startPos = currentPos - stepDelta * dir;
+						float2 screen = mul(unity_CameraProjection, float4(startPos, 1));
+						
+						preDepth = startPos.z / -_ProjectionParams.z;
+
 						hitPixel = screenCoord.xy / 2 + 0.5;
 						//		debugCol = float3(hitPixel, 0);
 						return true;
