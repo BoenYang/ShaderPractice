@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading;
 
 namespace GameServer
@@ -16,13 +17,17 @@ namespace GameServer
 
         public void Init()
         {
-            m_kcp = new KCPServer(1001, 1);
+            m_kcp = new KCPServer(1001);
             m_kcp.AddReceiveListener(this.OnRecivedData);
         }
 
-        private void OnRecivedData(byte[] data, int size)
+        private void OnRecivedData(KCPProxy proxy,byte[] data, int size)
         {
-
+            string content = Encoding.UTF8.GetString(data);
+            Console.WriteLine("[Main] Recived Content " + content);
+            string ret = "server echo " + content;
+            byte[] buffer = Encoding.UTF8.GetBytes(ret);
+            proxy.DoSend(buffer, buffer.Length);
         }
 
         public void Run()

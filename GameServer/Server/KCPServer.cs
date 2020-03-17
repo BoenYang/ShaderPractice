@@ -112,16 +112,13 @@ public class KCPServer
     }
 
     private KCPProxy GetKcp(uint sid) {
-
-        KCPProxy proxy = null;
         int cnt = m_ListKcp.Count;
         for (int i = 0; i < cnt; i++) {
-            proxy = m_ListKcp[i];
-            if (proxy.sid == sid) {
-                return proxy;
+            if (m_ListKcp[i].sid == sid) {
+                return m_ListKcp[i];
             }
         }
-        return proxy;
+        return null;
     }
 
     private KCPProxy CreateKcp(uint sid, IPEndPoint ipep)
@@ -210,18 +207,18 @@ public class KCPServer
             SocketFlags.None, ref remotePoint);
 
         if (cnt > 0) {
-            Console.WriteLine("receive data" + cnt);
-            byte[] m_32b = new byte[4];
-            Buffer.BlockCopy(m_RecvBufferTemp, 0, m_32b, 0, 4);
-            uint sid = BitConverter.ToUInt32(m_32b, 0);
-
-            KCPProxy proxy = GetKcp(sid);
-            if (proxy == null)
+            if (cnt >= 4)
             {
-                proxy = CreateKcp(sid, (IPEndPoint)remotePoint);
+                byte[] m_32b = new byte[4];
+                Buffer.BlockCopy(m_RecvBufferTemp, 0, m_32b, 0, 4);
+                uint sid = BitConverter.ToUInt32(m_32b, 0);
+                KCPProxy proxy = GetKcp(sid);
+                if (proxy == null) {
+                    proxy = CreateKcp(sid, (IPEndPoint)remotePoint);
+                }
+                proxy.DoReceiveInThread(m_RecvBufferTemp, cnt);
             }
 
-            proxy.DoReceiveInThread(m_RecvBufferTemp, cnt);
         }
 
     }
@@ -310,8 +307,6 @@ public class KCPProxy
 
 
     public void DoReceiveInThread(byte[] buffer, int size) {
-
-
         byte[] dst = new byte[size];
         Buffer.BlockCopy(buffer, 0, dst, 0, size);
         m_RecvQueue.Push(dst);
@@ -325,9 +320,9 @@ public class KCPProxy
 
             //收到的不是一个正确的KCP包
             if (ret < 0) {
-                if (m_Listener != null) {
-                    m_Listener(this,recvBufferRaw, recvBufferRaw.Length);
-                }
+                //if (m_Listener != null) {
+                //    m_Listener(this,recvBufferRaw, recvBufferRaw.Length);
+                //}
                 return;
             }
 
