@@ -2,14 +2,15 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using Random = System.Random;
 
 public class KCPClient
 {
 
     private bool m_IsRunning = false;
-    
+
     private Socket m_SystemSocket;
-    
+
     private uint m_KcpKey;
 
     private Thread m_ThreadRecv;
@@ -32,15 +33,19 @@ public class KCPClient
 
     public event KCPReceiveListener m_Listener;
 
+    private int m_bindPort = 0;
+
     private static UInt32 GetClockMS() {
         return (UInt32)(Convert.ToInt64(DateTime.UtcNow.Subtract(UTCTimeBegin).TotalMilliseconds) & 0xffffffff);
     }
 
-    public KCPClient(string host,int hostPort, int bindPort, uint kcpKey) {
-        m_KcpKey = kcpKey;
+    public KCPClient(string host, int hostPort) {
+        m_KcpKey = (uint)new Random(DateTime.Now.Millisecond).Next();
+
+        m_bindPort = new Random(DateTime.Now.Millisecond).Next(5000, 65535);
 
         m_SystemSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        IPEndPoint ipep = new IPEndPoint(IPAddress.Any, bindPort);
+        IPEndPoint ipep = new IPEndPoint(IPAddress.Any, m_bindPort);
         m_SystemSocket.Bind(ipep);
 
         m_kcp = new KCP(m_KcpKey, kcpSend);
@@ -52,8 +57,24 @@ public class KCPClient
         m_ThreadRecv.Start();
     }
 
-    public void Close() { 
-    
+    public void Dispose() {
+        m_IsRunning = false;
+
+        if (m_ThreadRecv != null) {
+            m_ThreadRecv.Interrupt();
+            m_ThreadRecv = null;
+        }
+
+        if (m_SystemSocket != null) {
+            try {
+                m_SystemSocket.Shutdown(SocketShutdown.Both);
+            }
+            catch (Exception e) {
+            }
+
+            m_SystemSocket.Close();
+            m_SystemSocket = null;
+        }
     }
 
 
@@ -71,9 +92,9 @@ public class KCPClient
 
                 //收到的不是一个正确的KCP包
                 if (ret < 0) {
-                    if (m_Listener != null) {
-                        m_Listener(recvBufferRaw, recvBufferRaw.Length);
-                    }
+                    //if (m_Listener != null) {
+                    //    m_Listener(recvBufferRaw, recvBufferRaw.Length);
+                    //}
                     return;
                 }
 
