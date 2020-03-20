@@ -1,41 +1,46 @@
-﻿using System;
-using System.Text;
+﻿using System.IO;
+using NetworkProtocal;
 using UnityEngine;
+using ProtoBuf;
 
 public class KCPTest : MonoBehaviour
 {
-    private KCPClient client;
+    private MobaClient m_client;
 
     // Start is called before the first frame update
     void Start()
     {
-        client = new KCPClient("127.0.0.1",1001);
-        client.m_Listener += OnRecieveData;
-     
+        m_client = new MobaClient("127.0.0.1",1001,1);
     }
 
     void OnGUI()
     {
         if (GUILayout.Button("Send", GUILayout.Width(200), GUILayout.Height(60)))
         {
-            string content = "hello world " + DateTime.Now;
-            byte[] buffer = Encoding.UTF8.GetBytes(content);
-            client.Send(buffer, buffer.Length);
+            EnterRoomRequest request = new EnterRoomRequest();
+            request.id = 1;
+
+            byte[] buffer = null;
+
+            using (MemoryStream m = new MemoryStream()) {
+                Serializer.Serialize<EnterRoomRequest>(m, request);
+            
+                m.Position = 0;
+                int length = (int)m.Length;
+                buffer = new byte[length];
+                m.Read(buffer, 0, length);
+            }
+            m_client.Send(1, buffer, buffer.Length);
             Debug.Log("send data");
         }
     }
 
-    void OnRecieveData(byte[] data, int size)
-    {
-        string content = Encoding.UTF8.GetString(data);
-        Debug.Log(content);
-    }
 
     void Update()
     {
-        if (client != null)
+        if (m_client != null)
         {
-            client.Update();
+            m_client.Update();
         }
    
     }

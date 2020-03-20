@@ -4,7 +4,7 @@ namespace GameServer
 {
     class Program
     {
-        private GameServer gameServer;
+        private MobaServer gameServer;
 
         static void Main(string[] args) {
            Program p = new Program();
@@ -14,7 +14,7 @@ namespace GameServer
 
         public void Init()
         {
-            gameServer = new GameServer(1001);
+            gameServer = new MobaServer(1001);
             gameServer.Start();
         }
 
