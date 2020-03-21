@@ -15,23 +15,36 @@ namespace GameServer
 
         private Dictionary<uint, ClientSession> sessionDict;
 
+        private MobaGame m_game;
+
+        private long m_lastTicks = 0;
+
+        private int serverFrameInterval = 100;
+
         public MobaServer(int port)
         {
             m_bindPort = port;
             sessionDict = new Dictionary<uint, ClientSession>();
+            m_game = new MobaGame();
         }
 
         private ClientSession GetSession(uint sid)
         {
             if (!sessionDict.ContainsKey(sid)) {
-                ClientSession session = new ClientSession(sid);
-                sessionDict.Add(sid,session);
-                return session;
+               
+                return null;
             }
             else
             {
                 return sessionDict[sid];
             }
+        }
+
+        private ClientSession CreateSession(uint sid)
+        {
+            ClientSession session = new ClientSession(sid);
+            sessionDict.Add(sid, session);
+            return session;
         }
 
         public void Start()
@@ -41,17 +54,20 @@ namespace GameServer
         }
 
         private void OnRecivedData(KCPProxy proxy, byte[] data, int size) {
-            if (size > MessageHeader.Length) {
+            if (size >= MessageHeader.Length) {
 
                 NetMessage msg = new NetMessage();
                 msg.Deserialize(data, size);
-                if (msg.Header.MessageId == GameCmd.EnterRoomRequest) {
-                    EnterRoomRequest t = default(EnterRoomRequest);
-                    using (MemoryStream m = new MemoryStream(msg.Data)) {
-                        t = Serializer.Deserialize<EnterRoomRequest>(m);
-                    }
-                    Console.WriteLine("Enter Room Request " + t.id);
+
+                uint sid = msg.Header.Sid;
+                ClientSession session = GetSession(sid);
+                if (session == null)
+                {
+                    session = CreateSession(sid);
+                    m_game.CreatePlayer(session);
                 }
+                session.BindProxy(proxy);
+                session.DoRecieve(msg);
             }
             else
             {
@@ -71,6 +87,18 @@ namespace GameServer
         public void Update()
         { 
             m_kcp.Update();
+            if (m_game != null)
+            {
+
+                long nowticks = DateTime.Now.Ticks;
+                long interval = nowticks - m_lastTicks;
+                long frameIntervalTicks = serverFrameInterval * 10000;
+                if (interval > frameIntervalTicks)
+                {
+                    m_game.Update();
+                    m_lastTicks = nowticks;
+                }
+            }
         }
     }
 }

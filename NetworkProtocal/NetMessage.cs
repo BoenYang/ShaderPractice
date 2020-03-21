@@ -12,6 +12,7 @@ public class MessageHeader
 
     public void Deserialize(ByteBuffer byteBuffer)
     {
+        Sid = byteBuffer.ReadUInt();
         MessageId = byteBuffer.ReadUInt();
         dataSize = byteBuffer.ReadUShort();
         TimeStamp = byteBuffer.ReadDouble();
@@ -19,6 +20,7 @@ public class MessageHeader
 
     public void Serialize(ByteBuffer byteBuffer)
     {
+        byteBuffer.WriteUInt(Sid);
         byteBuffer.WriteUInt(MessageId);
         byteBuffer.WriteUShort(dataSize);
         byteBuffer.WriteDouble(TimeStamp);

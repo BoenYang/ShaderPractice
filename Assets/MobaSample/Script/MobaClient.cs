@@ -1,56 +1,1 @@
-﻿using System;
-using System.Collections;
-using System.Text;
-using UnityEngine;
-
-
-public class MobaClient {
-
-    private KCPClient m_KcpClient;
-
-    private uint m_sid;
-
-    public MobaClient(string host, int port,uint sid)
-    {
-        m_KcpClient = new KCPClient("127.0.0.1", 1001);
-        m_KcpClient.m_Listener += OnRecieveData;
-        m_sid = sid;
-    }
-
-    public void Send(uint cmd, byte[] buffer,int size)
-    {
-        NetMessage msg = new NetMessage();
-        msg.Header.MessageId = cmd;
-        msg.Header.Sid = m_sid;
-        msg.Header.dataSize = (ushort)size;
-        msg.Header.TimeStamp = GetTimeStamp();
-        msg.Data = buffer;
-
-        byte[] data;
-        msg.Serialize(out data);
-        if (data != null)
-        {
-            m_KcpClient.Send(data, data.Length);
-        }
-    }
-
-    void OnRecieveData(byte[] data, int size) {
-        string content = Encoding.UTF8.GetString(data);
-        Debug.Log(content);
-    }
-
-    double GetTimeStamp()
-    {
-        TimeSpan ts = DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0, 0);
-        return ts.TotalMilliseconds;
-    }
-
-    public void Update()
-    {
-        if (m_KcpClient != null)
-        {
-            m_KcpClient.Update();
-        }
-    }
-
-}
+﻿using System;using NetworkProtocal;using UnityEngine;using UnityEngine.SceneManagement;public class MobaClient {    private KCPClient m_KcpClient;    private uint m_sid;    public static MobaClient Instance    {        get => m_ins;    }    public static MobaClient m_ins;    public MobaClient(string host, int port, uint sid)    {        m_KcpClient = new KCPClient(host, port);        m_KcpClient.m_Listener += OnRecieveData;        m_sid = sid;        m_ins = this;    }    public void Send<T>(GameCmd cmd, T t)    {        byte[] protoBytes = PBUtils.PBSerialize(t);        NetMessage msg = new NetMessage();        msg.Header.MessageId = (uint)cmd;        msg.Header.Sid = m_sid;        msg.Header.dataSize = (ushort)protoBytes.Length;        msg.Header.TimeStamp = GetTimeStamp();        msg.Data = protoBytes;        byte[] data;        int len = msg.Serialize(out data);        if (data != null)        {            Debug.Log("[MobaClient] send data size " + len);            m_KcpClient.Send(data, len);        }    }    void OnRecieveData(byte[] data, int size) {        NetMessage msg = new NetMessage();        msg.Deserialize(data,size);        GameCmd cmd = (GameCmd)((int)msg.Header.MessageId);        Debug.Log("[MobaClient] recieve " + cmd.ToString());        switch (cmd)        {            case GameCmd.EnterRoomResponse:                EnterRoomResponse response = PBUtils.PBDeserialize<EnterRoomResponse>(msg.Data);                MobaData.RoomPlayerInfos = response.playerInfos;                UIController.Instance.ShowBattlePerpareUI();                break;            case GameCmd.EnterRoomBroadcast:                EnterRoomBroadcast broacast = PBUtils.PBDeserialize<EnterRoomBroadcast>(msg.Data);                MobaData.RoomPlayerInfos.Add(broacast.playerInfo);                UIController.Instance.battlePerpareUI.NewPlayerEnter(broacast.playerInfo);                break;            case GameCmd.ReadyBroadcast:                break;            case GameCmd.EnterSceneBroadcast:                SceneManager.LoadScene("battle");                break;            case GameCmd.ErrorResponse:                break;        }    }    double GetTimeStamp()    {        TimeSpan ts = DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0, 0);        return ts.TotalMilliseconds;    }    public void Update()    {        if (m_KcpClient != null)        {            m_KcpClient.Update();        }    }}

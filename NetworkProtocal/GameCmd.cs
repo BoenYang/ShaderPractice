@@ -1,8 +1,15 @@
 ﻿namespace NetworkProtocal
 {
-    public class GameCmd
+    public enum GameCmd
     {
-        public static uint EnterRoomRequest = 1;
-        public static uint EnterRoomResponse = 2;
+        ErrorResponse = 0,
+        EnterRoomRequest = 1,
+        EnterRoomResponse = 2,
+        EnterRoomBroadcast = 3,
+
+        ReadyRequest = 4,
+        ReadyBroadcast = 5,
+
+        EnterSceneBroadcast = 6,
     }
 }

@@ -39,10 +39,11 @@ public class KCPServer
         IPEndPoint ipep = new IPEndPoint(IPAddress.Any, bindPort);
         m_SystemSocket.Bind(ipep);
 
+        this.Log("Start KCP Server Listener at " + bindPort);
+
         m_IsRunning = true;
         m_ThreadRecv = new Thread(Thread_Recv) { IsBackground = true };
         m_ThreadRecv.Start();
-
     }
 
 
@@ -73,10 +74,6 @@ public class KCPServer
             m_SystemSocket.Close();
             m_SystemSocket = null;
         }
-    }
-
-    public void Connect(IPEndPoint remotePoint) {
-        m_SystemSocket.Connect(remotePoint);
     }
 
     public int SelfPort
@@ -184,7 +181,6 @@ public class KCPServer
 
     private void Thread_Recv() {
         this.Log("Thread_Recv() Begin ......");
-
         while (m_IsRunning) {
             try {
                 DoReceive();
@@ -220,9 +216,14 @@ public class KCPServer
     }
 
     private void Log(string log) {
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine("[" + LOG_TAG + "]" + log);
     }
 
-    private void LogWarning(string log) {
+    private void LogWarning(string log)
+    {
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("[" + LOG_TAG + "]" + log);
     }
 
     #endregion
