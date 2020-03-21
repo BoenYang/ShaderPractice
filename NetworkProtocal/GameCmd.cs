@@ -11,5 +11,7 @@
         ReadyBroadcast = 5,
 
         EnterSceneBroadcast = 6,
+
+        PlayerInited = 7,
     }
 }

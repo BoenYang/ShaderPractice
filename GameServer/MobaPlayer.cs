@@ -11,8 +11,6 @@ namespace GameServer
 
         private Action<MobaPlayer, NetMessage> m_Listener;
 
-        private bool m_Ready;
-
         private PlayerInfo m_userInfo;
 
         public PlayerInfo PlayerInfo
@@ -29,11 +27,7 @@ namespace GameServer
             get => m_id;
         }
 
-        public bool IsReady
-        {
-            get => m_Ready;
-        }
-
+    
         public float posX;
 
         public float posY;
@@ -61,7 +55,7 @@ namespace GameServer
             posY = 0;
             posZ = 0;
             this.teamId = teamId;
-            m_GameInfo.ConfigId = 1;
+            m_GameInfo.HeroId = 1;
             m_GameInfo.PlayerId = Id;
             m_GameInfo.TeamId = this.teamId;
         }
@@ -72,6 +66,7 @@ namespace GameServer
             m_session = session;
             m_session.AddNetMessageListener(this.OnRecivedNetMessage);
             m_Listener = msgListener;
+            m_userInfo = new PlayerInfo();
         }
 
         private void OnRecivedNetMessage(NetMessage msg)
@@ -102,7 +97,7 @@ namespace GameServer
 
         public void SetReady(bool ready)
         {
-            this.m_Ready = ready;
+            PlayerInfo.ready = ready;
         }
         
 

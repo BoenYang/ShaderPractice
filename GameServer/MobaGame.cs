@@ -34,7 +34,7 @@ namespace GameServer
         {
             foreach (var p in m_PlayerDict.Values)
             {
-                if (p.IsReady)
+                if (p.PlayerInfo.ready)
                 {
                     return true;
                 }
@@ -69,7 +69,8 @@ namespace GameServer
             {
                 case GameCmd.EnterRoomRequest:
                     EnterRoomRequest enterRoomRequest = PBUtils.PBDeserialize<EnterRoomRequest>(msg.Data);
-                    player.PlayerInfo = enterRoomRequest.playerInfo;
+                    player.PlayerInfo.id = enterRoomRequest.id;
+                    player.PlayerInfo.name = enterRoomRequest.name;
 
                     EnterRoomResponse response = new EnterRoomResponse();
                     response.playerInfos = new List<PlayerInfo>(m_PlayerDict.Count);

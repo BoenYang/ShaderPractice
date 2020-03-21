@@ -12,13 +12,19 @@ namespace NetworkProtocal
         [ProtoMember(2)]
         public string name;
 
+        [ProtoMember(3)]
+        public bool ready;
+
     }
 
     [ProtoContract]
     public class EnterRoomRequest
     {
         [ProtoMember(1)]
-        public PlayerInfo playerInfo;
+        public uint id;
+
+        [ProtoMember(2)] 
+        public string name;
     }
 
 
@@ -80,7 +86,7 @@ namespace NetworkProtocal
         [ProtoMember(1)] 
         public uint PlayerId;
         [ProtoMember(2)]
-        public uint ConfigId;
+        public uint HeroId;
         [ProtoMember(3)]
         public uint TeamId;
         [ProtoMember(4)]

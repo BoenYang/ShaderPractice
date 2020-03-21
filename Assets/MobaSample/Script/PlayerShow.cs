@@ -12,8 +12,14 @@ public class PlayerShow : MonoBehaviour
 
     public Text WaitingText;
 
+    public Text ReadyText;
+
+    [System.NonSerialized]
+    public PlayerInfo PlayerInfo;
+
     public void SetPlayerInfo(PlayerInfo info)
     {
+        PlayerInfo = info;
         WaitingText.gameObject.SetActive(false);
         Avatar.gameObject.SetActive(true);
         Id.text = info.id + "";
@@ -24,6 +30,11 @@ public class PlayerShow : MonoBehaviour
     {
         WaitingText.gameObject.SetActive(true);
         Avatar.gameObject.SetActive(false);
+    }
+
+    public void SetReady(bool ready)
+    {
+        ReadyText.gameObject.SetActive(ready);
     }
 
 

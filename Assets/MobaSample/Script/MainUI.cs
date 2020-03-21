@@ -14,15 +14,15 @@ public class MainUI : MonoBehaviour
 
     void Start()
     {
+        MobaData.MyId = userId;
         MobaClient client = new MobaClient("127.0.0.1",1001, userId);
     }
 
     public void OnEnterRoomClick()
     {
         EnterRoomRequest request = new EnterRoomRequest();
-        request.playerInfo = new PlayerInfo();
-        request.playerInfo.id = userId;
-        request.playerInfo.name = userName;
+        request.id = userId;
+        request.name = userName;
         MobaClient.Instance.Send(GameCmd.EnterRoomRequest,request);
     }
 
