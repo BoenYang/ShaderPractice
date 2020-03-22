@@ -17,9 +17,7 @@ namespace GameServer
 
         private MobaGame m_game;
 
-        private long m_lastTicks = 0;
 
-        private int serverFrameInterval = 100;
 
         public MobaServer(int port)
         {
@@ -89,15 +87,7 @@ namespace GameServer
             m_kcp.Update();
             if (m_game != null)
             {
-
-                long nowticks = DateTime.Now.Ticks;
-                long interval = nowticks - m_lastTicks;
-                long frameIntervalTicks = serverFrameInterval * 10000;
-                if (interval > frameIntervalTicks)
-                {
-                    m_game.Update();
-                    m_lastTicks = nowticks;
-                }
+                m_game.Update();
             }
         }
     }

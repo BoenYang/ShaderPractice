@@ -30,7 +30,7 @@ public class BattlePerpareUI : MonoBehaviour
     {
         for (int i = 0; i < PlayerShow.Length; i++)
         {
-            if (PlayerShow[i].PlayerInfo.id == info.id)
+            if (PlayerShow[i].PlayerInfo != null && PlayerShow[i].PlayerInfo.id == info.id)
             {
                 PlayerShow[i].SetReady(info.ready);
             }

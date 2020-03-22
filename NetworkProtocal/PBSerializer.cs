@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using ProtoBuf;
 
 namespace NetworkProtocal
@@ -24,9 +25,11 @@ namespace NetworkProtocal
         public static T PBDeserialize<T>(byte[] buffer)
         {
             T proto = default(T);
-            using (MemoryStream m = new MemoryStream(buffer)) {
+            Console.WriteLine("[PBUtils] buffer len " + buffer.Length);
+            using (MemoryStream m = new MemoryStream(buffer,0,buffer.Length)) {
                 proto = Serializer.Deserialize<T>(m);
             }
+
             return proto;
         }
     }

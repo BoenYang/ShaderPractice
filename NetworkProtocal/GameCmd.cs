@@ -12,6 +12,10 @@
 
         EnterSceneBroadcast = 6,
 
-        PlayerInited = 7,
+        PlayerInitedRequest = 7,
+        PlayerInitedBroadcast = 8,
+
+        SyncRequest = 100,
+        SyncBroadcast = 101,
     }
 }

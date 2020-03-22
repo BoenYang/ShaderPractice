@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Numerics;
 using NetworkProtocal;
 
 namespace GameServer
@@ -34,7 +36,21 @@ namespace GameServer
 
         public float posZ;
 
+        public float rotX;
+
+        public float rotY;
+
+        public float rotZ;
+
+        public float moveX;
+
+        public float moveZ;
+
         public uint teamId;
+
+        public float moveSpeed = 5;
+
+        public bool Inited;
 
         private PlayerGameInfo m_GameInfo = new PlayerGameInfo();
 
@@ -45,6 +61,11 @@ namespace GameServer
                 m_GameInfo.PosX = (int)posX * 100;
                 m_GameInfo.PosY = (int)posY * 100;
                 m_GameInfo.PosZ = (int)posZ * 100;
+                m_GameInfo.RotX = (int) rotX * 100;
+                m_GameInfo.RotY = (int) rotY * 100;
+                m_GameInfo.RotZ = (int) rotZ * 100;
+                m_GameInfo.MoveX = (int) moveX * 100;
+                m_GameInfo.MoveZ = (int) moveZ * 100;
                 return m_GameInfo;
             }
         }
@@ -67,6 +88,7 @@ namespace GameServer
             m_session.AddNetMessageListener(this.OnRecivedNetMessage);
             m_Listener = msgListener;
             m_userInfo = new PlayerInfo();
+            Inited = false;
         }
 
         private void OnRecivedNetMessage(NetMessage msg)
@@ -101,9 +123,12 @@ namespace GameServer
         }
         
 
-        public void Update()
+        public void Update(float dt)
         {
+            posX += dt * moveX * moveSpeed;
+            posZ += dt * moveZ * moveSpeed;
 
+            Console.WriteLine("[MobaPlayer] Player Update X = " + posX + " Z = " + posZ + " dt = " + dt + " move x = " + moveX + " move z = " + moveZ);
         }
 
         double GetTimeStamp() {

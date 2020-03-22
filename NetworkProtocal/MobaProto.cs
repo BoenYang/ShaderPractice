@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using ProtoBuf;
 
 namespace NetworkProtocal
@@ -81,33 +82,42 @@ namespace NetworkProtocal
     }
 
     [ProtoContract]
-    public class PlayerGameInfo
+    public class PlayerInitedReqeust
     {
-        [ProtoMember(1)] 
-        public uint PlayerId;
-        [ProtoMember(2)]
-        public uint HeroId;
-        [ProtoMember(3)]
-        public uint TeamId;
-        [ProtoMember(4)]
-        public int PosX;
-        [ProtoMember(5)]
-        public int PosY;
-        [ProtoMember(6)]
-        public int PosZ;
-        [ProtoMember(7)]
-        public int RotX;
-        [ProtoMember(8)]
-        public int RotY;
-        [ProtoMember(9)]
-        public int RotZ;
 
     }
 
     [ProtoContract]
-    public class PlayerSyncInfo
+    public class PlayerInitedRespnose
     {
 
+    }
+
+    [ProtoContract]
+    public class PlayerGameInfo
+    {
+        [ProtoMember(1,IsRequired = true)] 
+        public uint PlayerId;
+        [ProtoMember(2, IsRequired = true)]
+        public uint HeroId;
+        [ProtoMember(3, IsRequired = true)]
+        public uint TeamId;
+        [ProtoMember(4, IsRequired = true)]
+        public int PosX;
+        [ProtoMember(5, IsRequired = true)]
+        public int PosY;
+        [ProtoMember(6, IsRequired = true)]
+        public int PosZ;
+        [ProtoMember(7, IsRequired = true)]
+        public int RotX;
+        [ProtoMember(8, IsRequired = true)]
+        public int RotY;
+        [ProtoMember(9, IsRequired = true)]
+        public int RotZ;
+        [ProtoMember(10, IsRequired = true)]
+        public int MoveX;
+        [ProtoMember(11, IsRequired = true)] 
+        public int MoveZ;
     }
 
 }

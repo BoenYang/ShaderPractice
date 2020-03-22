@@ -6,6 +6,9 @@ namespace GameServer
 {
     public class MobaGame
     {
+        private long m_lastTicks = 0;
+
+        private int serverFrameIntervalMs = 100;
 
         private Dictionary<uint,MobaPlayer> m_PlayerDict;
 
@@ -43,6 +46,16 @@ namespace GameServer
             return false;
         }
 
+        public bool AllPlayerInited()
+        {
+            foreach (var p in m_PlayerDict.Values) {
+                if (!p.Inited) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         public MobaGame()
         {
             m_PlayerDict = new Dictionary<uint, MobaPlayer>();
@@ -65,6 +78,15 @@ namespace GameServer
         private void OnPlayerMessage(MobaPlayer player, NetMessage msg)
         {
             GameCmd cmd = (GameCmd)msg.Header.MessageId;
+
+            // if (player.PlayerInfo != null) {
+            //     Console.WriteLine("[MobaGame] Recieve Player " + player.PlayerInfo.name + " cmd " + cmd);
+            // }
+            // else
+            // {
+            //     Console.WriteLine("[MobaGame] Recieve PlayerId " + player.Id + " cmd " + cmd);
+            // }
+   
             switch (cmd)
             {
                 case GameCmd.EnterRoomRequest:
@@ -94,7 +116,17 @@ namespace GameServer
                     readyBroadcast.playerId = player.Id;
                     readyBroadcast.ready = readyRequest.ready;
                     
+                    Console.WriteLine("[MobaGame] Player " + player.PlayerInfo.name + " ready = " + readyBroadcast.ready);
                     Broadcast(GameCmd.ReadyBroadcast,readyBroadcast);
+                    break;
+                case GameCmd.PlayerInitedRequest:
+                    player.Inited = true;
+                    Console.WriteLine("[MobaGame] Player " + player.PlayerInfo.name + " Inited = ");
+                    break;
+                case GameCmd.SyncRequest:
+                    PlayerGameInfo playerGameInfo = PBUtils.PBDeserialize<PlayerGameInfo>(msg.Data);
+                    player.moveX = playerGameInfo.MoveX / 100f;
+                    player.moveZ = playerGameInfo.MoveZ / 100f;
                     break;
             }
         }
@@ -128,15 +160,48 @@ namespace GameServer
                         enterSceneBroadcast.playerGameInfos.Add(p.GameInfo);
                     }
                     Broadcast(GameCmd.EnterSceneBroadcast,enterSceneBroadcast);
+                    Console.WriteLine("[MobaGame] Watiing Client init ");
                     m_currentState = MobaGameState.WaitingPlayerInit;
                 }
             }
 
             if (m_currentState == MobaGameState.WaitingPlayerInit)
             {
-                return;
+                if (AllPlayerInited())
+                {
+                    PlayerInitedRespnose playerInitedBroacast = new PlayerInitedRespnose();
+                    Broadcast(GameCmd.PlayerInitedBroadcast, playerInitedBroacast);
+
+                    Console.WriteLine("[MobaGame] Start Game ");
+
+                    m_currentState = MobaGameState.Playing;
+                }
+                else
+                {
+                    return;
+                }
+            }
+        
+
+            if (m_currentState == MobaGameState.Playing)
+            {
+
+                long nowticks = DateTime.Now.Ticks;
+                long interval = nowticks - m_lastTicks;
+                long frameIntervalTicks = serverFrameIntervalMs * 10000;
+                if (interval > frameIntervalTicks) {
+                    m_lastTicks = nowticks;
+
+                    foreach (var p in m_PlayerDict.Values) {
+                        p.Update(serverFrameIntervalMs/1000f);
+                    }
+
+                    foreach (var p in m_PlayerDict.Values) {
+                        Broadcast(GameCmd.SyncBroadcast, p.GameInfo);
+                    }
+
+                }
             }
         }
-
     }
 }
